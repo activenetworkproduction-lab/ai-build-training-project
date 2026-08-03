@@ -30,7 +30,7 @@
 │   ├── postgres-init/01-init.sql # 首次启动自动建 vector 扩展 + documents 表
 │   └── pgadmin/servers.json      # pgAdmin 预注册的 Postgres 连接
 ├── scripts/                      # 一键安装 / 一键启动
-│   ├── setup.ps1                     # 检测装Docker → 起容器 → 等数据库就绪
+│   ├── setup.ps1                     # 一键装Docker+Node+Python，起容器，装依赖，建.env
 │   ├── start-ocr.ps1                 # 01
 │   ├── start-crawler.ps1             # 00
 │   ├── start-vector-ingest.ps1       # 03 入库
@@ -58,29 +58,36 @@
 
 ## 快速开始
 
-### 第 1 步：一键搭建基础设施
+### 第 1 步：一键搭建整个环境
+
+新拉下代码后，只需要跑这一个脚本，不需要额外手动装任何东西
+（Docker/Node.js/pnpm/Python 已经装过的话会自动跳过，不会重复安装）：
 
 ```powershell
 powershell -File scripts/setup.ps1
 ```
 
-检测/安装 Docker → 启动 Postgres(pgvector)、Neo4j、pgAdmin 三个容器 → Postgres 首次
-启动时自动建好 `vector` 扩展和 `documents` 表（`docker/postgres-init/01-init.sql`，
-不需要额外手动建库）。完成后打印各个管理界面的地址和账号密码。
+它会依次完成：
 
-### 第 2 步：装依赖
+1. 检测/安装 Docker → 启动 Postgres(pgvector)、Neo4j、pgAdmin 三个容器 →
+   Postgres 首次启动时自动建好 `vector` 扩展和 `documents` 表
+   （`docker/postgres-init/01-init.sql`，不需要额外手动建库）
+2. 检测/安装 Node.js + pnpm → `pnpm install`（01_ai-ocr 用）
+3. 检测 Python → 建 `.venv` 虚拟环境 → `pip install -r requirements.txt`
+   （00/02/03/04/05/06/07 这些 Python 项目共用这一个虚拟环境）
+4. 从 `.env.example` 复制出 `.env`（如果还没有的话，不会覆盖已有配置）
 
-```powershell
-# Node（01_ai-ocr）
-pnpm install
+完成后打印各个管理界面的地址、账号密码，以及接下来该做什么。
 
-# Python（00/02/03/04/05/06/07 共用一个虚拟环境）
-python -m venv .venv
-.venv\Scripts\pip install -r requirements.txt
-copy .env.example .env
-```
+> 如果本机完全没装过 Docker/Node.js/Python，脚本会尝试用 `winget` 自动安装；
+> 装完之后有的软件需要重新打开一个终端（刷新 PATH）才能继续，脚本会提示你
+> 重新运行一次。
 
-### 第 3 步：跑 RAG 全流程（00 → 03/04 → 02）
+唯一还需要手动做的一步：编辑 `.env`，填入 `GEMINI_API_KEY`（或 `OPENAI_API_KEY`）——
+这个不能自动化，需要你自己去 [Google AI Studio](https://aistudio.google.com/apikey)
+申请。
+
+### 第 2 步：跑 RAG 全流程（00 → 03/04 → 02）
 
 ```powershell
 powershell -File scripts/start-crawler.ps1         # 00：抓取维基百科词条到 data/raw/
