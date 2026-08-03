@@ -8,7 +8,7 @@ importers:
 
   .: {}
 
-  ocr/server:
+  01_ai-ocr/server:
     dependencies:
       '@nestjs/common':
         specifier: ^11.0.0
@@ -45,7 +45,7 @@ importers:
         specifier: ^5.7.0
         version: 5.9.3
 
-  ocr/web:
+  01_ai-ocr/web:
     dependencies:
       react:
         specifier: ^19.0.0

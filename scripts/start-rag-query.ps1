@@ -36,12 +36,16 @@ if (-not $Question) {
     $Question = Read-Host "输入你的问题"
 }
 
+# 四种查询方式分散在三个不同的编号项目里：
+# BM25/向量查询在 03_vector（和"数据怎么切块存向量"放一起），
+# 图查询在 04_graph（和"数据怎么切块存图谱"放一起），
+# Agentic 查询单独是 02_ai-rag（它调用的正是 03/04 里这几个查询函数）
 $scriptMap = @{
-    'bm25'    = 'query_bm25.py'
-    'vector'  = 'query_vector.py'
-    'graph'   = 'query_graph.py'
-    'agentic' = 'query_agentic.py'
+    'bm25'    = '03_vector\query_bm25.py'
+    'vector'  = '03_vector\query_vector.py'
+    'graph'   = '04_graph\query_graph.py'
+    'agentic' = '02_ai-rag\query_agentic.py'
 }
 
 $env:PYTHONUTF8 = '1'
-& $py (Join-Path $repoRoot "rag-query\$($scriptMap[$Mode])") $Question
+& $py (Join-Path $repoRoot $scriptMap[$Mode]) $Question

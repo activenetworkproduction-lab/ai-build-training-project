@@ -1,53 +1,56 @@
 # project040 — AI 应用教学项目集
 
-三个教学项目，共用一套 Docker 基础设施（Postgres+pgvector / Neo4j / pgAdmin），
-外加一组不绑定具体业务场景的 Agent 工程模式样例：
-
-| # | 项目 | 位置 | 技术栈 |
-|---|---|---|---|
-| 一 | 图片文字解析（OCR） | `ocr/` | NestJS + React，Gemini/Qwen-VL |
-| 二 | RAG 数据管道 | `data-pipeline/` | Python：爬虫 → 向量入库 → 图谱入库 |
-| 三 | RAG 统一查询 | `rag-query/` | Python：BM25 / 向量 / 图 / Agentic 四种查询方式 |
-| — | Agent 工程模式 | `agent-engineering/` | Python：Harness / Loop / Graph 三种通用架构样例（详见下方及 `agent-engineering/README.md`） |
-
+8 个教学项目（编号 00-07），共用一套 Docker 基础设施（Postgres+pgvector / Neo4j / pgAdmin）。
 涉及"调用 AI 模型"的核心部分（视觉识别、embedding、实体抽取、Agent 决策）采用
 **"先完整实现并用真实数据验证跑通，再注释掉核心代码留给课堂现场实操"**的方式组织：
 搜索文件里的 `TODO(课堂实操)` 就能找到这些留白点，紧跟着的注释块就是验证通过的参考实现。
 
+## 项目总览
+
+| # | 项目 | 位置 | 说明 |
+|---|---|---|---|
+| 00 | 爬虫 | `00_crawler/` | 共用的数据来源（不算在"7个项目"里），抓中文维基百科词条 |
+| 01 | AI OCR | `01_ai-ocr/` | 图片文字解析，NestJS + React，Gemini/Qwen-VL |
+| 02 | AI RAG | `02_ai-rag/` | Agentic 查询：模型自己决定调用 03/04 里的哪种查询方式 |
+| 03 | Vector | `03_vector/` | 数据怎么"切块"存向量 + 向量查询 + BM25 查询 |
+| 04 | Graph | `04_graph/` | 数据怎么"切块"抽三元组存图谱 + 图查询（Neo4j） |
+| 05 | Harness | `05_harness/` | 通用 Agent 六大组件：工具/上下文/权限/状态/恢复/评估 |
+| 06 | Loop | `06_loop/` | 通用 Agent 最基础的 ReAct 循环 |
+| 07 | Graph Engineering | `07_graph-engineering/` | Agent 编排图：研究员→写手→评论者，条件边+环路 |
+
+02~04 是一组（RAG 全流程：爬虫→切块入库→查询），05~07 是另一组（通用 agent 架构模式，
+不绑定 RAG 场景，参照 [Graph Engineering Guide 2026](https://www.aibuilderclub.com/blog/graph-engineering-guide-2026)
+的 `Prompt → Context → Harness → Loop → Graph` 技术栈）。
+
 ## 目录结构
 
 ```
-├── docker/                       # 项目二三共用的基础设施
+├── docker/                       # 02~04 共用的基础设施
 │   ├── docker-compose.yml        # Postgres(pgvector) + Neo4j + pgAdmin
 │   ├── postgres-init/01-init.sql # 首次启动自动建 vector 扩展 + documents 表
 │   └── pgadmin/servers.json      # pgAdmin 预注册的 Postgres 连接
 ├── scripts/                      # 一键安装 / 一键启动
-│   ├── setup.ps1                 # 检测装Docker → 起容器 → 等数据库就绪
-│   ├── start-ocr.ps1
-│   ├── start-crawler.ps1
-│   ├── start-vector-ingest.ps1
-│   ├── start-graph-ingest.ps1
-│   └── start-rag-query.ps1
-├── ocr/                           # 项目一
-│   ├── server/                   # NestJS 后端
-│   └── web/                      # React 前端
-├── common/                       # 项目二三共用的 Python 模块
+│   ├── setup.ps1                     # 检测装Docker → 起容器 → 等数据库就绪
+│   ├── start-ocr.ps1                 # 01
+│   ├── start-crawler.ps1             # 00
+│   ├── start-vector-ingest.ps1       # 03 入库
+│   ├── start-graph-ingest.ps1        # 04 入库
+│   ├── start-rag-query.ps1           # 02/03/04 查询（-Mode bm25|vector|graph|agentic）
+│   ├── start-harness.ps1             # 05
+│   ├── start-loop.ps1                # 06
+│   └── start-graph-engineering.ps1   # 07
+├── 00_crawler/                   # 爬虫
+├── 01_ai-ocr/                     # OCR：server(NestJS) + web(React)
+├── 02_ai-rag/                     # Agentic 查询
+├── 03_vector/                     # 向量入库 + 向量/BM25 查询
+├── 04_graph/                      # 图谱入库 + 图查询
+├── 05_harness/                    # Agent Harness 样例
+├── 06_loop/                       # Agent Loop 样例
+├── 07_graph-engineering/          # Agent 编排图样例
+├── common/                        # 02~04 共用的 Python 模块
 │   ├── db_postgres.py / db_neo4j.py   # 数据库连接（已完整实现）
 │   ├── embedding.py               # 【课堂留白】embedding 手写调用
 │   └── extraction.py              # 【课堂留白】实体关系拆分手写调用
-├── data-pipeline/                # 项目二：爬虫 → 向量入库 → 图谱入库
-│   ├── crawler/crawl.py
-│   ├── vector-ingest/ingest.py
-│   └── graph-ingest/ingest.py
-├── rag-query/                    # 项目三：BM25 / 向量 / 图 / Agentic 四种查询
-│   ├── query_bm25.py
-│   ├── query_vector.py
-│   ├── query_graph.py
-│   └── query_agentic.py          # 【课堂留白】Agent 的模型调用
-├── agent-engineering/             # Agent 工程模式样例（不绑定RAG，通用架构演示）
-│   ├── harness/                  # 六大组件：工具/上下文/权限/状态/恢复/评估
-│   ├── loop/                     # 最基础的 ReAct 循环（计算器+汇率转换）
-│   └── graph/                    # 研究员→写手→评论者，条件边+环路
 ├── data/raw/                      # 爬虫产出（不进版本库，随时可重新生成）
 ├── requirements.txt               # 所有 Python 组件共用一份依赖
 └── .env.example                   # 所有 Python 组件共用一份配置
@@ -61,43 +64,50 @@
 powershell -File scripts/setup.ps1
 ```
 
-这一步会：检测/安装 Docker → 启动 Postgres(pgvector)、Neo4j、pgAdmin 三个容器 →
-Postgres 首次启动时自动建好 `vector` 扩展和 `documents` 表（见
-`docker/postgres-init/01-init.sql`，不需要额外手动建库）。完成后打印各个管理
-界面的地址和账号密码。
+检测/安装 Docker → 启动 Postgres(pgvector)、Neo4j、pgAdmin 三个容器 → Postgres 首次
+启动时自动建好 `vector` 扩展和 `documents` 表（`docker/postgres-init/01-init.sql`，
+不需要额外手动建库）。完成后打印各个管理界面的地址和账号密码。
 
 ### 第 2 步：装依赖
 
 ```powershell
-# Node（项目一 OCR）
+# Node（01_ai-ocr）
 pnpm install
 
-# Python（项目二三共用一个虚拟环境）
+# Python（00/02/03/04/05/06/07 共用一个虚拟环境）
 python -m venv .venv
 .venv\Scripts\pip install -r requirements.txt
 copy .env.example .env
 ```
 
-### 第 3 步：跑数据管道（项目二），再查询（项目三）
+### 第 3 步：跑 RAG 全流程（00 → 03/04 → 02）
 
 ```powershell
-powershell -File scripts/start-crawler.ps1         # 抓取维基百科词条到 data/raw/
-powershell -File scripts/start-vector-ingest.ps1   # 分段 + embedding，写入 Postgres
-powershell -File scripts/start-graph-ingest.ps1    # 拆三元组，写入 Neo4j
-powershell -File scripts/start-rag-query.ps1       # 交互式选查询方式
+powershell -File scripts/start-crawler.ps1         # 00：抓取维基百科词条到 data/raw/
+powershell -File scripts/start-vector-ingest.ps1   # 03：分段 + embedding，写入 Postgres
+powershell -File scripts/start-graph-ingest.ps1    # 04：拆三元组，写入 Neo4j
+powershell -File scripts/start-rag-query.ps1       # 02/03/04：交互式选查询方式
 ```
 
 > 注意：`vector-ingest` 和 `graph-ingest` 依赖 `common/embedding.py` /
 > `common/extraction.py` 里的核心调用（课堂留白，目前是占位报错）。这两步需要
 > 先完成对应的课堂实操才能真正跑起来——BM25 查询和图查询不依赖它们，可以直接用。
 
-### 项目一（OCR）单独运行
+### 01（OCR）单独运行
 
 ```powershell
 powershell -File scripts/start-ocr.ps1
 # 或分开手动跑：
 pnpm dev:ocr:server   # 后端 http://localhost:3040
 pnpm dev:ocr:web      # 前端 http://localhost:5102
+```
+
+### 05/06/07（Agent 架构样例）单独运行
+
+```powershell
+powershell -File scripts/start-harness.ps1
+powershell -File scripts/start-loop.ps1
+powershell -File scripts/start-graph-engineering.ps1 "自定义主题"
 ```
 
 ## 管理界面
@@ -111,41 +121,16 @@ pnpm dev:ocr:web      # 前端 http://localhost:5102
 > 本机常用端口 3000/5432/7474/7687 等已被其他服务占用，所以本项目分别改用
 > 3040（OCR后端）/5532（Postgres）/7475+7688（Neo4j）/5050（pgAdmin）。
 
-## 项目二：RAG 数据管道（详见 `data-pipeline/README.md`）
+## 各项目详细说明
 
-三个阶段，一个接一个跑：
-
-1. **爬虫**（`data-pipeline/crawler/crawl.py`）：抓取中文维基百科上"检索增强生成"
-   "向量数据库""图数据库""PostgreSQL"等词条正文，作为教学语料
-2. **向量入库**（`data-pipeline/vector-ingest/ingest.py`）：按段落切分 → 调用
-   embedding 接口 → 存进 Postgres 的 `documents` 表（`VECTOR(768)` 列）
-3. **图谱入库**（`data-pipeline/graph-ingest/ingest.py`）：每段文字调用大模型拆成
-   `(主体, 关系, 客体)` 三元组 → 用 `MERGE` 写入 Neo4j
-
-## 项目三：RAG 统一查询（详见 `rag-query/README.md`）
-
-同一份数据，四种查询方式，直观对比差异：
-
-| 方式 | 原理 | 擅长 |
-|---|---|---|
-| BM25 | 关键词匹配 + 词频统计，纯算法不需要模型 | 问题包含明确专有名词 |
-| 向量 | embedding 语义相似度（pgvector `<=>`） | 意思相近但没有相同关键词 |
-| 图 | Cypher 遍历实体关系 | "A 和 B 是什么关系"这类问题 |
-| Agentic | 大模型自己决定调用哪个/哪几个工具，多轮迭代后综合回答 | 复杂问题，一种方式不够时自动换/组合 |
-
-## Agent 工程模式：Harness / Loop / Graph（详见 `agent-engineering/README.md`）
-
-三个通用样例，不绑定 RAG 场景，演示三种由简到繁的 agent 架构模式
-（参照 [Graph Engineering Guide 2026](https://www.aibuilderclub.com/blog/graph-engineering-guide-2026)：
-`Prompt → Context → Harness → Loop → Graph`）：
-
-```powershell
-powershell -File scripts/start-harness.ps1   # 六大组件：工具/上下文/权限/状态/恢复/评估
-powershell -File scripts/start-loop.ps1      # 最基础的 ReAct 循环
-powershell -File scripts/start-graph.ps1     # 研究员→写手→评论者，条件边+环路
-```
-
-`rag-query/query_agentic.py` 本身也是"Loop"模式的一个应用实例，只是绑定了 RAG 场景。
+- [00_crawler/README.md](00_crawler/README.md)
+- [01_ai-ocr/web/README.md](01_ai-ocr/web/README.md)
+- [02_ai-rag/README.md](02_ai-rag/README.md)
+- [03_vector/README.md](03_vector/README.md)
+- [04_graph/README.md](04_graph/README.md)
+- [05_harness/README.md](05_harness/README.md)
+- [06_loop/README.md](06_loop/README.md)
+- [07_graph-engineering/README.md](07_graph-engineering/README.md)
 
 ## 常见踩坑记录
 
@@ -160,3 +145,10 @@ powershell -File scripts/start-graph.ps1     # 研究员→写手→评论者，
 - **本机系统 locale 是日文（cp932）**：带中文字符的 `.ps1` 脚本必须存成带 BOM 的
   UTF-8，否则 PowerShell 5.1 会用 cp932 解码导致语法错误；Python 脚本打印中文
   在某些终端（比如 Git Bash）下也需要设置 `PYTHONUTF8=1`。
+- **重试装饰器要排除"不会因重试而恢复"的错误**：`05_harness/recovery.py` 一开始用裸
+  `except Exception`，会把课堂留白的 `NotImplementedError` 也当瞬时性错误重试，
+  浪费几秒——只应该重试网络抖动/限流这类真正的瞬时性错误。
+- **跨项目 Python import 用 `sys.path.insert`，注意路径深度**：`02_ai-rag/query_agentic.py`
+  需要导入 `03_vector`/`04_graph` 里的查询函数，靠 `sys.path.insert(0, repo_root / "03_vector")`
+  这种方式；把文件挪动目录层级后，所有 `Path(__file__).resolve().parents[N]` 里的 N
+  都要跟着重新核对，挪错一层不会报错，但会静默地找错 `.env`/`data` 路径。

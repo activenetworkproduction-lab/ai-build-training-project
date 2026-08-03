@@ -1,7 +1,7 @@
 """把 data/raw/*.txt（爬虫产出）分段、生成 embedding，写入 Postgres 的 documents 表。
 
 用法（common/embedding.py 里的 embed_text 被课堂现场实现之后）：
-    python data-pipeline/vector-ingest/ingest.py
+    python 03_vector/ingest.py
 
 分块方式：爬虫已经按段落（自然换行）切好了，这里直接按行切分——每个段落
 本身长度适中（几十到几百字），不需要再做更复杂的滑动窗口/重叠切分，
@@ -11,19 +11,19 @@
 import sys
 from pathlib import Path
 
-sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from common.db_postgres import get_connection
 from common.embedding import embed_text
 
-RAW_DIR = Path(__file__).resolve().parents[2] / "data" / "raw"
+RAW_DIR = Path(__file__).resolve().parents[1] / "data" / "raw"
 MIN_CHUNK_LENGTH = 20  # 太短的段落大概率是格式碎片，跳过
 
 
 def load_chunks() -> list[tuple[str, str]]:
     """返回 [(source, content), ...]，source 是来源文件名（不含扩展名）。"""
     if not RAW_DIR.exists():
-        raise RuntimeError(f"找不到 {RAW_DIR}，请先运行 data-pipeline/crawler/crawl.py")
+        raise RuntimeError(f"找不到 {RAW_DIR}，请先运行 00_crawler/crawl.py")
 
     chunks = []
     for file in sorted(RAW_DIR.glob("*.txt")):

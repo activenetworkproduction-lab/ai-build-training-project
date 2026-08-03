@@ -17,7 +17,7 @@ if (-not (Test-Path $py)) {
 
 $env:PYTHONUTF8 = '1'
 if ($Question) {
-    & $py (Join-Path $repoRoot 'agent-engineering\loop\main.py') $Question
+    & $py (Join-Path $repoRoot '06_loop\main.py') $Question
 } else {
-    & $py (Join-Path $repoRoot 'agent-engineering\loop\main.py')
+    & $py (Join-Path $repoRoot '06_loop\main.py')
 }

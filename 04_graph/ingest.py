@@ -1,7 +1,7 @@
 """把 data/raw/*.txt（爬虫产出）逐句拆成三元组，写入 Neo4j。
 
 用法（common/extraction.py 里的 extract_triples 被课堂现场实现之后）：
-    python data-pipeline/graph-ingest/ingest.py
+    python 04_graph/ingest.py
 
 为了控制模型调用次数（一句话一次调用），这里只挑每篇文章的前 N 段——
 图谱抽取本身就是"简单导入样例"的定位，不需要处理全文。
@@ -10,12 +10,12 @@
 import sys
 from pathlib import Path
 
-sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from common.db_neo4j import get_driver
 from common.extraction import extract_triples
 
-RAW_DIR = Path(__file__).resolve().parents[2] / "data" / "raw"
+RAW_DIR = Path(__file__).resolve().parents[1] / "data" / "raw"
 MAX_PARAGRAPHS_PER_FILE = 5  # 每篇文章只取前几段做实体抽取，控制模型调用次数
 
 
@@ -29,7 +29,7 @@ def ensure_constraint(driver) -> None:
 
 def load_paragraphs() -> list[str]:
     if not RAW_DIR.exists():
-        raise RuntimeError(f"找不到 {RAW_DIR}，请先运行 data-pipeline/crawler/crawl.py")
+        raise RuntimeError(f"找不到 {RAW_DIR}，请先运行 00_crawler/crawl.py")
 
     paragraphs = []
     for file in sorted(RAW_DIR.glob("*.txt")):

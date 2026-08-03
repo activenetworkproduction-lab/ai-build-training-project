@@ -1,7 +1,7 @@
 """向量查询：找出和问题语义最相近的几条记录。
 
 用法：
-    python rag-query/query_vector.py "什么是向量检索？"
+    python 03_vector/query_vector.py "什么是向量检索？"
 """
 
 import sys
@@ -14,7 +14,7 @@ from common.embedding import embed_text
 
 
 def search_vector(question: str, top_k: int = 5) -> list[dict]:
-    """给 rag-query/query_agentic.py 当工具函数用，返回结构化结果。"""
+    """给 02_ai-rag/query_agentic.py 当工具函数用，返回结构化结果。"""
     vector = embed_text(question)
 
     conn = get_connection()

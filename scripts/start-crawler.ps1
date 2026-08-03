@@ -11,4 +11,4 @@ if (-not (Test-Path $py)) {
 }
 
 $env:PYTHONUTF8 = '1'
-& $py (Join-Path $repoRoot 'data-pipeline\crawler\crawl.py')
+& $py (Join-Path $repoRoot '00_crawler\crawl.py')

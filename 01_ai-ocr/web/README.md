@@ -34,9 +34,9 @@ FileInterceptor('image')
 
 | 步骤 | 文件 |
 |---|---|
-| ① 前端上传 | `ocr/web/src/App.tsx` 的 `handleParse()` |
-| ① 后端接收 | `ocr/server/src/modules/ocr/ocr.controller.ts` |
-| ②③④ 调用模型 | `ocr/server/src/modules/ocr/ocr.service.ts` 的 `parseImage()` |
+| ① 前端上传 | `01_ai-ocr/web/src/App.tsx` 的 `handleParse()` |
+| ① 后端接收 | `01_ai-ocr/server/src/modules/ocr/ocr.controller.ts` |
+| ②③④ 调用模型 | `01_ai-ocr/server/src/modules/ocr/ocr.service.ts` 的 `parseImage()` |
 
 ## 二、三个关键知识点
 

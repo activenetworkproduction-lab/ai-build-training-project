@@ -1,7 +1,7 @@
 """图查询：从某个实体出发，找到与它相关的其它实体。
 
 用法：
-    python rag-query/query_graph.py "RAG"
+    python 04_graph/query_graph.py "RAG"
 
 思路：
     用 Cypher 查询和给定实体有直接关系（1 跳）的所有节点。用 startNode(r)/
@@ -20,7 +20,7 @@ from common.db_neo4j import get_driver
 
 
 def search_graph(entity_name: str) -> list[dict]:
-    """给 rag-query/query_agentic.py 当工具函数用，返回结构化结果。"""
+    """给 02_ai-rag/query_agentic.py 当工具函数用，返回结构化结果。"""
     driver = get_driver()
     try:
         with driver.session() as session:
@@ -42,7 +42,7 @@ def search_graph(entity_name: str) -> list[dict]:
 def query_graph(entity_name: str) -> None:
     rows = search_graph(entity_name)
     if not rows:
-        print(f"没有找到和“{entity_name}”相关的关系（检查实体名是否写对，或先跑 graph-ingest）")
+        print(f"没有找到和“{entity_name}”相关的关系（检查实体名是否写对，或先跑 04_graph/ingest.py）")
         return
 
     print(f"和“{entity_name}”相关的关系：\n")

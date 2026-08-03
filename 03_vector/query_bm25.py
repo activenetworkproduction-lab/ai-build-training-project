@@ -1,7 +1,7 @@
 """BM25 查询：基于关键词匹配和词频统计的经典检索算法，不需要模型。
 
 用法：
-    python rag-query/query_bm25.py "PostgreSQL 扩展"
+    python 03_vector/query_bm25.py "PostgreSQL 扩展"
 
 实现说明：
     中文没有空格分词，严谨的做法要用 jieba 这类分词库，但为了让教学重点留在
@@ -33,7 +33,7 @@ def load_documents() -> list[tuple[str, str]]:
 
 
 def search_bm25(question: str, top_k: int = 5) -> list[dict]:
-    """给 rag-query/query_agentic.py 当工具函数用，返回结构化结果。"""
+    """给 02_ai-rag/query_agentic.py 当工具函数用，返回结构化结果。"""
     docs = load_documents()
     if not docs:
         # documents 表是空的（还没跑 vector-ingest），BM25Okapi 对空语料会直接除零报错，
@@ -55,7 +55,7 @@ def query_bm25(question: str, top_k: int = 5) -> None:
     results = search_bm25(question, top_k)
     print(f"问题：{question}\n")
     if not results:
-        print("没有查到任何内容（documents 表是空的，请先跑 data-pipeline/vector-ingest/ingest.py）")
+        print("没有查到任何内容（documents 表是空的，请先跑 03_vector/ingest.py）")
         return
     for i, r in enumerate(results, start=1):
         print(f"{i}. [{r['source']}] [得分 {r['score']}] {r['content']}")

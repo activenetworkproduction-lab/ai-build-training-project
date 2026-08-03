@@ -6,7 +6,7 @@
 "BM25 和向量检索有什么区别"，答案就来自这里抓的内容。
 
 用法：
-    python data-pipeline/crawler/crawl.py
+    python 00_crawler/crawl.py
 
 产出：repo 根目录 data/raw/<词条名>.txt，每个文件是一个词条的正文段落
 """
@@ -29,7 +29,7 @@ TARGET_TITLES = [
     "Okapi BM25",
 ]
 
-OUTPUT_DIR = Path(__file__).resolve().parents[2] / "data" / "raw"
+OUTPUT_DIR = Path(__file__).resolve().parents[1] / "data" / "raw"
 
 # 维基百科要求爬虫带上有辨识度的 User-Agent，说明身份和用途
 HEADERS = {

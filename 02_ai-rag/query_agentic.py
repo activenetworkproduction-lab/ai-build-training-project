@@ -6,7 +6,7 @@ BM25/向量/图查询都是"人决定用哪种方式查一次"，而这里是"AI
 一个工具，看到结果后再决定——继续换个方式查，还是已经够了可以直接回答。
 
 用法：
-    python rag-query/query_agentic.py "RAG 和向量数据库、图数据库分别是什么关系？"
+    python 02_ai-rag/query_agentic.py "RAG 和向量数据库、图数据库分别是什么关系？"
 
 【课堂实操说明】核心的"调用模型做决策"这一步（call_model 函数）已经注释掉了——
 这部分已经用真实问题验证跑通过：问"RAG 和向量数据库、图数据库分别是什么关系？"，
@@ -23,7 +23,11 @@ import os
 import sys
 from pathlib import Path
 
-sys.path.insert(0, str(Path(__file__).resolve().parent))
+_REPO_ROOT = Path(__file__).resolve().parents[1]
+# bm25_search/vector_search 定义在 03_vector/，graph_search 定义在 04_graph/——
+# agentic 查询本身只负责"决定调哪个工具"，具体怎么查复用那两个项目已经写好的实现
+sys.path.insert(0, str(_REPO_ROOT / "03_vector"))
+sys.path.insert(0, str(_REPO_ROOT / "04_graph"))
 
 from query_bm25 import search_bm25
 from query_graph import search_graph

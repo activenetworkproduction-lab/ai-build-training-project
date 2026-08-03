@@ -12,4 +12,4 @@ if (-not (Test-Path $py)) {
 }
 
 $env:PYTHONUTF8 = '1'
-& $py (Join-Path $repoRoot 'data-pipeline\graph-ingest\ingest.py')
+& $py (Join-Path $repoRoot '04_graph\ingest.py')
