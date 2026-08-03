@@ -13,3 +13,7 @@ __pycache__/
 
 # 爬虫产出的原始数据，可以随时重新爬取，不需要进版本库
 data/raw/
+
+# 可视化 demo 生成的 HTML（内嵌了当时爬到的真实新闻内容），跑一次对应脚本就能重新生成
+03_vector/embeddings_visualization.html
+04_graph/graph_visualization.html

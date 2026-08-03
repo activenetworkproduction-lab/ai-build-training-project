@@ -21,6 +21,7 @@
 | `ingest.py` | ✅ 完整实现（依赖 `common/extraction.py`） |
 | `query_graph.py` | ✅ 完整实现并验证（Cypher 查询 + `startNode`/`endNode` 修正关系方向显示） |
 | `common/extraction.py` | ⏳ 课堂留白：`extract_triples()` 已验证跑通（25 条新闻共抽取出 190 条关系），核心代码注释在文件底部 |
+| `visualize_graph.py` | ✅ 完整实现（力导向布局 + 生成可视化 HTML，不涉及调用模型，不是课堂留白点） |
 
 `extraction.py` 一旦被课堂现场实现，`ingest.py` 不需要改任何代码就能直接跑通。
 
@@ -56,6 +57,21 @@ python 04_graph/query_graph.py "阿里巴巴"
 ```
 
 也可以用根目录 `scripts/start-graph-ingest.ps1` 和 `scripts/start-rag-query.ps1 -Mode graph`。
+
+## 图谱可视化 demo
+
+`visualize_graph.py` 把 Neo4j 里所有 (实体, 关系, 实体) 三元组导出成一张力导向节点图：
+
+```bash
+python 04_graph/visualize_graph.py    # 或 scripts/start-graph-visualize.ps1（会自动打开浏览器）
+```
+
+生成的 `04_graph/graph_visualization.html` 是单文件（数据直接内嵌，双击打开即可）。
+节点位置由页面里手写的力导向布局算法（Fruchterman-Reingold 简化版）实时计算——节点之间
+互相排斥、有关系的节点之间用"弹簧"拉近，可以拖动节点、点击节点看它的完整关系列表，
+也可以在搜索框输入实体名快速定位。实测 213 个实体、189 条关系导出后，图上能直接看到
+几个连接数明显更多的"枢纽"实体（比如 Qwen3.8-Max、OpenAI），这正是"文本被结构化成图"
+之后才能一眼看出来的信息——单纯读原始新闻文本是看不出这种全局关系密度分布的。
 
 ## 课堂实操：手写实体拆分
 

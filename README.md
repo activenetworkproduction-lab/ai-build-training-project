@@ -34,7 +34,9 @@
 │   ├── start-ocr.ps1                 # 01
 │   ├── start-crawler.ps1             # 00
 │   ├── start-vector-ingest.ps1       # 03 入库
+│   ├── start-vector-visualize.ps1    # 03 embedding 可视化 demo
 │   ├── start-graph-ingest.ps1        # 04 入库
+│   ├── start-graph-visualize.ps1     # 04 图谱可视化 demo
 │   ├── start-rag-query.ps1           # 02/03/04 查询（-Mode bm25|vector|graph|agentic）
 │   ├── start-harness.ps1             # 05
 │   ├── start-loop.ps1                # 06
@@ -99,6 +101,13 @@ powershell -File scripts/start-rag-query.ps1       # 02/03/04：交互式选查�
 > 注意：`vector-ingest` 和 `graph-ingest` 依赖 `common/embedding.py` /
 > `common/extraction.py` 里的核心调用（课堂留白，目前是占位报错）。这两步需要
 > 先完成对应的课堂实操才能真正跑起来——BM25 查询和图查询不依赖它们，可以直接用。
+
+入库跑完之后，还可以看两个可视化 demo（不涉及调用模型，随时能跑，会自动打开浏览器）：
+
+```powershell
+powershell -File scripts/start-vector-visualize.ps1   # 03：768 维 embedding 降到 2 维的散点图
+powershell -File scripts/start-graph-visualize.ps1    # 04：实体关系的力导向节点图
+```
 
 ### 01（OCR）单独运行
 

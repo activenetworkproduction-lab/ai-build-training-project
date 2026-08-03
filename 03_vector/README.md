@@ -12,6 +12,7 @@
 | `query_vector.py` | ✅ 完整实现并验证（pgvector 的 `<=>` 余弦距离排序） |
 | `query_bm25.py` | ✅ 完整实现并验证（`rank_bm25`，按字符切分中文） |
 | `common/embedding.py` | ⏳ 课堂留白：`embed_text()` 已验证跑通（61 条新闻全部导入成功），核心代码注释在文件底部 |
+| `visualize_embeddings.py` | ✅ 完整实现（PCA 降维 + 生成可视化 HTML，不涉及调用模型，不是课堂留白点） |
 
 `embedding.py` 一旦被课堂现场实现，`ingest.py` 和 `query_vector.py` 不需要改任何代码
 就能直接跑通——它们已经按照"依赖 embed_text() 存在"的假设写完整了。
@@ -53,6 +54,20 @@ python 03_vector/query_bm25.py "阿里巴巴 Qwen"
 ```
 
 也可以用根目录 `scripts/start-vector-ingest.ps1` 和 `scripts/start-rag-query.ps1 -Mode bm25|vector`。
+
+## embedding 可视化 demo
+
+768 维向量人没法直接看懂，`visualize_embeddings.py` 用手写的 PCA（SVD 实现，见文件里的
+`pca_2d()`）把它压缩到 2 维画成散点图，直观展示"语义相近的新闻会聚在一起"这件事：
+
+```bash
+python 03_vector/visualize_embeddings.py    # 或 scripts/start-vector-visualize.ps1（会自动打开浏览器）
+```
+
+生成的 `03_vector/embeddings_visualization.html` 是单文件（数据直接内嵌，双击打开即可），
+点击下方的分类标签可以高亮某一类新闻，鼠标悬停能看到具体内容。实测 61 条向量降到 2 维后，
+前两个主成分只解释了原始 768 维里约 12.6% 的方差——这是正常的取舍：2 维图看到的只是
+高维语义空间的一个粗略投影，不代表两个点离得远就一定不相关。
 
 ## 课堂实操：手写 embedding 调用
 

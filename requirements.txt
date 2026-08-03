@@ -14,3 +14,6 @@ requests==2.32.3
 
 # BM25 keyword search (pure Python implementation, easy to read the algorithm itself)
 rank-bm25==0.2.2
+
+# PCA for the embedding-space visualization demo (hand-written SVD-based PCA, numpy just supplies the SVD)
+numpy==2.4.6
