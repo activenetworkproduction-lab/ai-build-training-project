@@ -1,12 +1,14 @@
 # project040 — AI 应用教学项目集
 
-三个教学项目，共用一套 Docker 基础设施（Postgres+pgvector / Neo4j / pgAdmin）：
+三个教学项目，共用一套 Docker 基础设施（Postgres+pgvector / Neo4j / pgAdmin），
+外加一组不绑定具体业务场景的 Agent 工程模式样例：
 
 | # | 项目 | 位置 | 技术栈 |
 |---|---|---|---|
 | 一 | 图片文字解析（OCR） | `ocr/` | NestJS + React，Gemini/Qwen-VL |
 | 二 | RAG 数据管道 | `data-pipeline/` | Python：爬虫 → 向量入库 → 图谱入库 |
 | 三 | RAG 统一查询 | `rag-query/` | Python：BM25 / 向量 / 图 / Agentic 四种查询方式 |
+| — | Agent 工程模式 | `agent-engineering/` | Python：Harness / Loop / Graph 三种通用架构样例（详见下方及 `agent-engineering/README.md`） |
 
 涉及"调用 AI 模型"的核心部分（视觉识别、embedding、实体抽取、Agent 决策）采用
 **"先完整实现并用真实数据验证跑通，再注释掉核心代码留给课堂现场实操"**的方式组织：
@@ -42,6 +44,10 @@
 │   ├── query_vector.py
 │   ├── query_graph.py
 │   └── query_agentic.py          # 【课堂留白】Agent 的模型调用
+├── agent-engineering/             # Agent 工程模式样例（不绑定RAG，通用架构演示）
+│   ├── harness/                  # 六大组件：工具/上下文/权限/状态/恢复/评估
+│   ├── loop/                     # 最基础的 ReAct 循环（计算器+汇率转换）
+│   └── graph/                    # 研究员→写手→评论者，条件边+环路
 ├── data/raw/                      # 爬虫产出（不进版本库，随时可重新生成）
 ├── requirements.txt               # 所有 Python 组件共用一份依赖
 └── .env.example                   # 所有 Python 组件共用一份配置
@@ -126,6 +132,20 @@ pnpm dev:ocr:web      # 前端 http://localhost:5102
 | 向量 | embedding 语义相似度（pgvector `<=>`） | 意思相近但没有相同关键词 |
 | 图 | Cypher 遍历实体关系 | "A 和 B 是什么关系"这类问题 |
 | Agentic | 大模型自己决定调用哪个/哪几个工具，多轮迭代后综合回答 | 复杂问题，一种方式不够时自动换/组合 |
+
+## Agent 工程模式：Harness / Loop / Graph（详见 `agent-engineering/README.md`）
+
+三个通用样例，不绑定 RAG 场景，演示三种由简到繁的 agent 架构模式
+（参照 [Graph Engineering Guide 2026](https://www.aibuilderclub.com/blog/graph-engineering-guide-2026)：
+`Prompt → Context → Harness → Loop → Graph`）：
+
+```powershell
+powershell -File scripts/start-harness.ps1   # 六大组件：工具/上下文/权限/状态/恢复/评估
+powershell -File scripts/start-loop.ps1      # 最基础的 ReAct 循环
+powershell -File scripts/start-graph.ps1     # 研究员→写手→评论者，条件边+环路
+```
+
+`rag-query/query_agentic.py` 本身也是"Loop"模式的一个应用实例，只是绑定了 RAG 场景。
 
 ## 常见踩坑记录
 
