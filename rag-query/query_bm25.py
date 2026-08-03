@@ -35,6 +35,11 @@ def load_documents() -> list[tuple[str, str]]:
 def search_bm25(question: str, top_k: int = 5) -> list[dict]:
     """给 rag-query/query_agentic.py 当工具函数用，返回结构化结果。"""
     docs = load_documents()
+    if not docs:
+        # documents 表是空的（还没跑 vector-ingest），BM25Okapi 对空语料会直接除零报错，
+        # 这里提前判断，返回空结果而不是让学习者看到一串 ZeroDivisionError
+        return []
+
     corpus = [tokenize(content) for _, content in docs]
     bm25 = BM25Okapi(corpus)
     scores = bm25.get_scores(tokenize(question))
@@ -49,6 +54,9 @@ def search_bm25(question: str, top_k: int = 5) -> list[dict]:
 def query_bm25(question: str, top_k: int = 5) -> None:
     results = search_bm25(question, top_k)
     print(f"问题：{question}\n")
+    if not results:
+        print("没有查到任何内容（documents 表是空的，请先跑 data-pipeline/vector-ingest/ingest.py）")
+        return
     for i, r in enumerate(results, start=1):
         print(f"{i}. [{r['source']}] [得分 {r['score']}] {r['content']}")
 

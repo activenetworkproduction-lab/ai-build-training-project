@@ -54,32 +54,3 @@ def embed_text(text: str) -> list[float]:
 #     return response.json()["embedding"]["values"]
 #
 # ===== 参考实现结束 =====
-
-
-# ===== 参考实现（已用真实 Gemini API 验证跑通，返回 768 维向量，71 条爬虫段落全部导入成功，课堂上现场重写）=====
-#
-# import requests
-#
-# def embed_text(text: str) -> list[float]:
-#     api_key = os.environ.get("GEMINI_API_KEY")
-#     if not api_key:
-#         raise RuntimeError("缺少 GEMINI_API_KEY 环境变量，请在 .env 里配置")
-#
-#     url = (
-#         "https://generativelanguage.googleapis.com/v1beta/models/"
-#         f"gemini-embedding-001:embedContent?key={api_key}"
-#     )
-#     response = requests.post(
-#         url,
-#         json={
-#             "model": "models/gemini-embedding-001",
-#             "content": {"parts": [{"text": text}]},
-#             "outputDimensionality": 768,
-#         },
-#         timeout=30,
-#     )
-#     if not response.ok:
-#         raise RuntimeError(f"embedding 请求失败（HTTP {response.status_code}）：{response.text[:500]}")
-#     return response.json()["embedding"]["values"]
-#
-# ===== 参考实现结束 =====

@@ -10,4 +10,5 @@ if (-not (Test-Path $py)) {
     exit 1
 }
 
+$env:PYTHONUTF8 = '1'
 & $py (Join-Path $repoRoot 'data-pipeline\crawler\crawl.py')
