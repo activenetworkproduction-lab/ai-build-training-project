@@ -1,8 +1,0 @@
-# Official Neo4j Python driver (Bolt protocol)
-neo4j==5.26.0
-
-# Read .env config
-python-dotenv==1.0.1
-
-# Plain requests for the hand-written LLM extraction call demo (no heavy SDK)
-requests==2.32.3

@@ -1,96 +1,142 @@
-# project040 Monorepo — AI 应用教学项目集
+# project040 — AI 应用教学项目集
 
-一个多项目 monorepo，作为一套完整的 AI 应用开发教学项目：Node/React 前端 + NestJS 共用后端，
-外加独立的 MCP 项目和 Python RAG 项目。涉及"调用 AI 模型/核心算法"的部分采用
-"先完整实现并验证跑通、再注释掉核心代码留给课堂现场实操"的方式组织，周边的 UI、
-参数校验、数据库连接等基础设施代码都是直接写完整的。
+三个教学项目，共用一套 Docker 基础设施（Postgres+pgvector / Neo4j / pgAdmin）：
 
-## 项目总览
-
-| # | 项目 | 位置 | 状态 |
+| # | 项目 | 位置 | 技术栈 |
 |---|---|---|---|
-| — | 示例模板 | `apps/project1-web` / `apps/project2-web` | 完整跑通 |
-| 一 | 图片文字解析（OCR，Gemini/Qwen-VL） | `apps/ocr-web` | ✅ 完整实现 |
-| 一 | 图片内容识别与分析（Gemini/OpenAI 视觉） | `apps/vision-analysis-web` | ✅ 已验证跑通，AI 调用核心留作课堂实操 |
-| 二 | MCP 查询 Excel | `mcp-projects/excel-mcp-server` | ✅ 完整实现（含手写 MCP 连接演示） |
-| 三 | RAG · 向量库（Postgres + pgvector） | `python-projects/rag-vector` | ✅ 已验证跑通，embedding 调用核心留作课堂实操 |
-| 三 | RAG · 图数据库（Neo4j） | `python-projects/rag-graph` | ✅ 已验证跑通，实体拆分核心留作课堂实操 |
+| 一 | 图片文字解析（OCR） | `ocr/` | NestJS + React，Gemini/Qwen-VL |
+| 二 | RAG 数据管道 | `data-pipeline/` | Python：爬虫 → 向量入库 → 图谱入库 |
+| 三 | RAG 统一查询 | `rag-query/` | Python：BM25 / 向量 / 图 / Agentic 四种查询方式 |
+
+涉及"调用 AI 模型"的核心部分（视觉识别、embedding、实体抽取、Agent 决策）采用
+**"先完整实现并用真实数据验证跑通，再注释掉核心代码留给课堂现场实操"**的方式组织：
+搜索文件里的 `TODO(课堂实操)` 就能找到这些留白点，紧跟着的注释块就是验证通过的参考实现。
 
 ## 目录结构
 
 ```
-├── apps/                         # Node/React 项目（pnpm workspace）
-│   ├── server/                   # 共用后端（NestJS，端口 3040，可用 PORT 环境变量覆盖）
-│   │   └── src/modules/
-│   │       ├── project1/         # 示例模板
-│   │       ├── project2/         # 示例模板
-│   │       ├── ocr/              # 项目一：OCR
-│   │       └── vision-analysis/  # 项目一：图片内容识别与分析
-│   ├── project1-web/             # 示例模板前端（端口 5100）
-│   ├── project2-web/             # 示例模板前端（端口 5101）
-│   ├── ocr-web/                  # 项目一·OCR 前端（端口 5102）
-│   └── vision-analysis-web/      # 项目一·内容识别与分析前端（端口 5103）
-├── packages/
-│   └── shared/                   # 前后端共享的 TypeScript 类型（@app/shared）
-├── mcp-projects/                 # 项目二：MCP（也在 pnpm workspace 里）
-│   └── excel-mcp-server/
-├── python-projects/               # 项目三：RAG（独立于 pnpm workspace，各自用 venv）
-│   ├── rag-vector/                # Postgres + pgvector
-│   └── rag-graph/                 # Neo4j
-└── pnpm-workspace.yaml
+├── docker/                       # 项目二三共用的基础设施
+│   ├── docker-compose.yml        # Postgres(pgvector) + Neo4j + pgAdmin
+│   ├── postgres-init/01-init.sql # 首次启动自动建 vector 扩展 + documents 表
+│   └── pgadmin/servers.json      # pgAdmin 预注册的 Postgres 连接
+├── scripts/                      # 一键安装 / 一键启动
+│   ├── setup.ps1                 # 检测装Docker → 起容器 → 等数据库就绪
+│   ├── start-ocr.ps1
+│   ├── start-crawler.ps1
+│   ├── start-vector-ingest.ps1
+│   ├── start-graph-ingest.ps1
+│   └── start-rag-query.ps1
+├── ocr/                           # 项目一
+│   ├── server/                   # NestJS 后端
+│   └── web/                      # React 前端
+├── common/                       # 项目二三共用的 Python 模块
+│   ├── db_postgres.py / db_neo4j.py   # 数据库连接（已完整实现）
+│   ├── embedding.py               # 【课堂留白】embedding 手写调用
+│   └── extraction.py              # 【课堂留白】实体关系拆分手写调用
+├── data-pipeline/                # 项目二：爬虫 → 向量入库 → 图谱入库
+│   ├── crawler/crawl.py
+│   ├── vector-ingest/ingest.py
+│   └── graph-ingest/ingest.py
+├── rag-query/                    # 项目三：BM25 / 向量 / 图 / Agentic 四种查询
+│   ├── query_bm25.py
+│   ├── query_vector.py
+│   ├── query_graph.py
+│   └── query_agentic.py          # 【课堂留白】Agent 的模型调用
+├── data/raw/                      # 爬虫产出（不进版本库，随时可重新生成）
+├── requirements.txt               # 所有 Python 组件共用一份依赖
+└── .env.example                   # 所有 Python 组件共用一份配置
 ```
 
-## 快速开始：Node/React 部分（示例模板 + 项目一 + MCP）
+## 快速开始
 
-```bash
-# 安装所有 Node 依赖（覆盖 apps/*、packages/*、mcp-projects/*）
+### 第 1 步：一键搭建基础设施
+
+```powershell
+powershell -File scripts/setup.ps1
+```
+
+这一步会：检测/安装 Docker → 启动 Postgres(pgvector)、Neo4j、pgAdmin 三个容器 →
+Postgres 首次启动时自动建好 `vector` 扩展和 `documents` 表（见
+`docker/postgres-init/01-init.sql`，不需要额外手动建库）。完成后打印各个管理
+界面的地址和账号密码。
+
+### 第 2 步：装依赖
+
+```powershell
+# Node（项目一 OCR）
 pnpm install
 
-# 先构建共享包（首次或修改 packages/shared 后必须执行）
-pnpm build:shared
-
-# 分别启动（各开一个终端）
-pnpm dev:server   # 共用后端 http://localhost:3040
-pnpm dev:p1       # 示例模板1 http://localhost:5100
-pnpm dev:p2       # 示例模板2 http://localhost:5101
-pnpm dev:ocr      # 项目一·OCR http://localhost:5102
-pnpm dev:vision   # 项目一·内容识别与分析 http://localhost:5103
+# Python（项目二三共用一个虚拟环境）
+python -m venv .venv
+.venv\Scripts\pip install -r requirements.txt
+copy .env.example .env
 ```
 
-开发时前端通过 Vite proxy 把 `/api` 转发到 `http://localhost:3040`，无跨域问题。
+### 第 3 步：跑数据管道（项目二），再查询（项目三）
 
-> 注：本机 3000、5173、5040、5432、7474、7687 等常用端口已被其他服务占用，
-> 因此各项目改用了 3040/510x（Node 服务）、5532（Postgres）、7475/7688（Neo4j）。
-> Vite 配置了 `strictPort`——端口被占时直接报错而不是静默换端口。
-
-## 项目二：MCP 查询 Excel
-
-不需要 `pnpm install`（已包含在根目录的 install 里）。详见
-[mcp-projects/excel-mcp-server/README.md](mcp-projects/excel-mcp-server/README.md)，
-重点是里面的"手写演示" `client-demo.ts`，把 AI 客户端连接 MCP Server 的握手过程完整展开来看：
-
-```bash
-pnpm --filter excel-mcp-server demo
+```powershell
+powershell -File scripts/start-crawler.ps1         # 抓取维基百科词条到 data/raw/
+powershell -File scripts/start-vector-ingest.ps1   # 分段 + embedding，写入 Postgres
+powershell -File scripts/start-graph-ingest.ps1    # 拆三元组，写入 Neo4j
+powershell -File scripts/start-rag-query.ps1       # 交互式选查询方式
 ```
 
-## 项目三：RAG（Python，独立于 pnpm workspace）
+> 注意：`vector-ingest` 和 `graph-ingest` 依赖 `common/embedding.py` /
+> `common/extraction.py` 里的核心调用（课堂留白，目前是占位报错）。这两步需要
+> 先完成对应的课堂实操才能真正跑起来——BM25 查询和图查询不依赖它们，可以直接用。
 
-两个分支分别用 Docker 起数据库，各自有独立的 `README.md` 说明环境搭建和后续步骤：
+### 项目一（OCR）单独运行
 
-- 向量库分支：[python-projects/rag-vector/README.md](python-projects/rag-vector/README.md)
-- 图数据库分支：[python-projects/rag-graph/README.md](python-projects/rag-graph/README.md)
+```powershell
+powershell -File scripts/start-ocr.ps1
+# 或分开手动跑：
+pnpm dev:ocr:server   # 后端 http://localhost:3040
+pnpm dev:ocr:web      # 前端 http://localhost:5102
+```
 
-## 新增一个 Node/React 项目（projectN）
+## 管理界面
 
-1. 后端：在 `apps/server/src/modules/` 下新建 `projectN` 模块（module/controller/service），
-   然后在 `app.module.ts` 的 `RouterModule.register` 中追加
-   `{ path: 'projectN', module: ProjectNModule }`。
-2. 前端：复制 `apps/project1-web` 为 `apps/projectN-web`，改 `package.json` 的 `name`、
-   `vite.config.ts` 的端口，接口统一请求 `/api/projectN/...`。
-3. 根 `package.json` 中加一条 `dev:pN` 脚本。
+| 服务 | 地址 | 账号 |
+|---|---|---|
+| pgAdmin | http://localhost:5050 | admin@training-project.com / admin123（已预注册 Postgres 连接，首次连接输入密码 rag_password） |
+| Neo4j Browser | http://localhost:7475 | neo4j / raggraph123 |
+| Postgres | localhost:5532 | rag / rag_password，数据库 ragdb |
 
-## 生产部署建议
+> 本机常用端口 3000/5432/7474/7687 等已被其他服务占用，所以本项目分别改用
+> 3040（OCR后端）/5532（Postgres）/7475+7688（Neo4j）/5050（pgAdmin）。
 
-各前端独立构建出静态文件，由 Nginx 按域名/路径分别托管；`/api` 统一反向代理到同一个后端进程，
-后端内部再按 `/api/projectN` 前缀路由到对应模块。Python RAG 项目和 MCP 项目是独立的教学演示，
-不参与这套前后端的生产部署流程。
+## 项目二：RAG 数据管道（详见 `data-pipeline/README.md`）
+
+三个阶段，一个接一个跑：
+
+1. **爬虫**（`data-pipeline/crawler/crawl.py`）：抓取中文维基百科上"检索增强生成"
+   "向量数据库""图数据库""PostgreSQL"等词条正文，作为教学语料
+2. **向量入库**（`data-pipeline/vector-ingest/ingest.py`）：按段落切分 → 调用
+   embedding 接口 → 存进 Postgres 的 `documents` 表（`VECTOR(768)` 列）
+3. **图谱入库**（`data-pipeline/graph-ingest/ingest.py`）：每段文字调用大模型拆成
+   `(主体, 关系, 客体)` 三元组 → 用 `MERGE` 写入 Neo4j
+
+## 项目三：RAG 统一查询（详见 `rag-query/README.md`）
+
+同一份数据，四种查询方式，直观对比差异：
+
+| 方式 | 原理 | 擅长 |
+|---|---|---|
+| BM25 | 关键词匹配 + 词频统计，纯算法不需要模型 | 问题包含明确专有名词 |
+| 向量 | embedding 语义相似度（pgvector `<=>`） | 意思相近但没有相同关键词 |
+| 图 | Cypher 遍历实体关系 | "A 和 B 是什么关系"这类问题 |
+| Agentic | 大模型自己决定调用哪个/哪几个工具，多轮迭代后综合回答 | 复杂问题，一种方式不够时自动换/组合 |
+
+## 常见踩坑记录
+
+- **Gemini 模型名会过期**：`gemini-2.5-flash`、`text-embedding-004` 已对新用户下线，
+  本项目统一改用验证可用的 `gemini-3.5-flash`（聊天/视觉）和 `gemini-embedding-001`
+  （embedding，用 `outputDimensionality` 截断到 768 维）。
+- **pgvector 查询要显式 `::vector` 类型转换**：`INSERT` 有隐式转换能直接存，但
+  `SELECT ... embedding <=> %s` 里没有目标列类型，必须写成 `%s::vector`。
+- **Neo4j 无向 Cypher 查询会掩盖关系真实方向**：要用 `startNode(r)`/`endNode(r)`，
+  不能直接用模式匹配里 a/b 的绑定顺序。
+- **pgAdmin 的默认邮箱不能用 `.local` 等保留域名**，会被邮箱格式校验拒绝。
+- **本机系统 locale 是日文（cp932）**：带中文字符的 `.ps1` 脚本必须存成带 BOM 的
+  UTF-8，否则 PowerShell 5.1 会用 cp932 解码导致语法错误；Python 脚本打印中文
+  在某些终端（比如 Git Bash）下也需要设置 `PYTHONUTF8=1`。

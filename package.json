@@ -2,13 +2,9 @@
   "name": "project040-training",
   "private": true,
   "scripts": {
-    "build:shared": "pnpm --filter @app/shared build",
-    "dev:server": "pnpm --filter server start:dev",
-    "dev:p1": "pnpm --filter project1-web dev",
-    "dev:p2": "pnpm --filter project2-web dev",
-    "dev:ocr": "pnpm --filter ocr-web dev",
-    "dev:vision": "pnpm --filter vision-analysis-web dev",
-    "build": "pnpm --filter @app/shared build && pnpm -r --filter !@app/shared build"
+    "dev:ocr:server": "pnpm --filter ocr-server start:dev",
+    "dev:ocr:web": "pnpm --filter ocr-web dev",
+    "build": "pnpm -r build"
   },
   "pnpm": {
     "onlyBuiltDependencies": [

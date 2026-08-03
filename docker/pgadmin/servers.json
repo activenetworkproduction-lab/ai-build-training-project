@@ -1,0 +1,14 @@
+{
+  "Servers": {
+    "1": {
+      "Name": "Training Postgres (pgvector)",
+      "Group": "Servers",
+      "Host": "postgres",
+      "Port": 5432,
+      "MaintenanceDB": "ragdb",
+      "Username": "rag",
+      "SSLMode": "prefer",
+      "Comment": "首次点开时输入密码 rag_password（docker-compose.yml 里配置的），可以勾选保存密码"
+    }
+  }
+}

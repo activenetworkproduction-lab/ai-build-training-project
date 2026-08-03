@@ -9,3 +9,6 @@ dist/
 .venv/
 __pycache__/
 *.pyc
+
+# 爬虫产出的原始数据，可以随时重新爬取，不需要进版本库
+data/raw/

@@ -1,0 +1,70 @@
+name: training
+
+services:
+  postgres:
+    # pgvector/pgvector 镜像 = 官方 Postgres + 预装好的 pgvector 扩展
+    image: pgvector/pgvector:pg16
+    container_name: training-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: rag
+      POSTGRES_PASSWORD: rag_password
+      POSTGRES_DB: ragdb
+    ports:
+      # 本机 5432 端口已被占用，改用 5532
+      - '5532:5432'
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      # docker-entrypoint-initdb.d 下的 .sql 文件会在“数据库第一次初始化”时自动执行一次，
+      # 这就是本项目“一键创建数据库/表”的实现方式，不需要额外手动跑初始化脚本
+      - ./postgres-init:/docker-entrypoint-initdb.d
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U rag']
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  neo4j:
+    image: neo4j:5-community
+    container_name: training-neo4j
+    restart: unless-stopped
+    environment:
+      NEO4J_AUTH: neo4j/raggraph123
+    ports:
+      # 本机 7474/7687 已被占用，改用 7475/7688
+      - '7475:7474' # HTTP：Neo4j Browser 可视化界面
+      - '7688:7687' # Bolt：Python driver 连接用
+    volumes:
+      - neo4j_data:/data
+    healthcheck:
+      test: ['CMD-SHELL', 'wget -q --spider http://localhost:7474 || exit 1']
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: training-pgadmin
+    restart: unless-stopped
+    environment:
+      # 注意：不能用 .local/.test/.example/.invalid 等保留域名，pgAdmin 的邮箱格式校验会拒绝
+      PGADMIN_DEFAULT_EMAIL: admin@training-project.com
+      PGADMIN_DEFAULT_PASSWORD: admin123
+      # 单用户桌面模式：跳过 pgAdmin 自己的账号登录流程，打开网页直接进主界面
+      PGADMIN_CONFIG_SERVER_MODE: 'False'
+      # 启动时自动导入下面这份 servers.json，预先注册好 Postgres 连接，
+      # 不用自己手填 host/port，只需要在第一次点开时输入一次密码 rag_password
+      PGADMIN_SERVER_JSON_FILE: /pgadmin4/servers.json
+    ports:
+      - '5050:80'
+    volumes:
+      - pgadmin_data:/var/lib/pgadmin
+      - ./pgadmin/servers.json:/pgadmin4/servers.json:ro
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+volumes:
+  pgdata:
+  neo4j_data:
+  pgadmin_data:
