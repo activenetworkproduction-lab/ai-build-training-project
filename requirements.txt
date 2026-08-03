@@ -9,12 +9,8 @@ neo4j==5.26.0
 # Config
 python-dotenv==1.0.1
 
-# HTTP calls to model APIs and to crawl target pages (hand-written, no heavy SDK)
+# HTTP calls to model APIs and to the AI News JSON API (hand-written, no heavy SDK)
 requests==2.32.3
-
-# Crawler: parse HTML
-beautifulsoup4==4.12.3
-lxml==5.3.0
 
 # BM25 keyword search (pure Python implementation, easy to read the algorithm itself)
 rank-bm25==0.2.2

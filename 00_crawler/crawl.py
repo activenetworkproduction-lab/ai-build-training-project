@@ -1,95 +1,88 @@
-"""爬虫：抓取中文维基百科上几个和 RAG 技术相关的词条，作为后续 embedding/图谱的语料。
+"""爬虫：抓取 AI News（https://ai-news.tayoru-kun.com/，用户自己设计的 AI 新闻网站）
+的内容，产出到仓库根目录的 data/raw/*.txt，供 03_vector 和 04_graph 各自读取。
 
-这是一个通用教学示例爬虫，不涉及任何具体业务数据，抓取内容是维基百科条目正文
-（CC BY-SA 授权，允许非商业教学场景复用）。因为爬的正好是 RAG/向量库/图数据库
-这些技术本身的词条，最后做出来的效果会很应景：可以问系统"什么是 RAG"、
-"BM25 和向量检索有什么区别"，答案就来自这里抓的内容。
+【学习要点】这个网站本身是一个纯前端 SPA（打开源码看，<body> 里只有一个空的
+<div id="app">，内容全靠 JS 跑起来之后再拉数据），所以"爬"这个站不是解析 HTML，
+而是要先找到它背后真正提供数据的接口。做法：打开浏览器开发者工具的网络面板，
+或者直接看它加载的 JS 文件里有没有 fetch(...) 调用——在这个站的
+assets/NewsView-*.js 里能翻到 `fetch(`${API}?days=60`)`，顺藤摸瓜就找到了
+下面这个 API_BASE。这也是为什么它比爬维基百科更简单：目标网站自己提供了
+结构化的 JSON，不需要用 BeautifulSoup 解析 HTML 标签。
 
 用法：
-    python 00_crawler/crawl.py
+    python 00_crawler/crawl.py [天数，默认 7]
 
-产出：repo 根目录 data/raw/<词条名>.txt，每个文件是一个词条的正文段落
+产出：按新闻分类（tag）汇总，每个分类一个文件，一行一条新闻（标题+摘要）：
+    data/raw/模型.txt
+    data/raw/工具.txt
+    data/raw/协议.txt
+    data/raw/平台.txt
+    data/raw/研究.txt
 """
 
-import re
-import time
+import sys
 from pathlib import Path
-from urllib.parse import quote
 
 import requests
-from bs4 import BeautifulSoup
 
-# 目标词条：都是和本项目主题（向量检索/图数据库/RAG）相关的中文维基百科条目
-TARGET_TITLES = [
-    "检索增强生成",
-    "向量数据库",
-    "图数据库",
-    "Neo4j",
-    "PostgreSQL",
-    "Okapi BM25",
-]
+API_BASE = "https://daily-ai-news-collector-ipzxnrn3rq-an.a.run.app"
 
-OUTPUT_DIR = Path(__file__).resolve().parents[1] / "data" / "raw"
-
-# 维基百科要求爬虫带上有辨识度的 User-Agent，说明身份和用途
-HEADERS = {
-    "User-Agent": "TrainingProjectCrawler/0.1 (educational RAG demo; contact: none)"
+# API 返回的 tag 是英文 key，网站界面上显示的是这些中文名（抄自网站自己的
+# assets/config-*.js 里的分类配置），文件名用中文名方便和其它爬虫产出保持风格一致
+TAG_NAMES = {
+    "model": "模型",
+    "tool": "工具",
+    "protocol": "协议",
+    "platform": "平台",
+    "research": "研究",
 }
 
-# 维基百科正文里常见的干扰内容：脚注标记 [1]、编辑按钮文字等，去掉让文本更干净
-CITATION_PATTERN = re.compile(r"\[\d+\]")
+OUTPUT_DIR = Path(__file__).resolve().parents[1] / "data" / "raw"
+HEADERS = {"User-Agent": "TrainingProjectCrawler/0.1 (educational RAG demo; contact: none)"}
 
 
-def fetch_article(title: str) -> str | None:
-    """抓取一个词条的正文段落，拼成一段纯文本。抓取失败（比如词条不存在）时返回 None。"""
-    url = f"https://zh.wikipedia.org/wiki/{quote(title)}"
-    response = requests.get(url, headers=HEADERS, timeout=15)
-    if response.status_code == 404:
-        print(f"  跳过「{title}」：词条不存在（404）")
-        return None
+def fetch_news(days: int) -> list[dict]:
+    """调用 API，把所有日期分组里的新闻条目拍平成一个列表。"""
+    response = requests.get(f"{API_BASE}?days={days}", headers=HEADERS, timeout=30)
     response.raise_for_status()
+    payload = response.json()
 
-    soup = BeautifulSoup(response.text, "lxml")
-    content = soup.select_one("#mw-content-text .mw-parser-output")
-    if not content:
-        print(f"  跳过「{title}」：没找到正文容器，页面结构可能变了")
-        return None
-
-    paragraphs = []
-    for p in content.find_all("p", recursive=True):
-        # 跳过嵌套在信息框/导航框里的段落，只要顶层正文段落
-        if p.find_parent(class_=["infobox", "navbox"]):
-            continue
-        text = CITATION_PATTERN.sub("", p.get_text()).strip()
-        if len(text) > 10:  # 太短的多半是空段落或格式碎片，跳过
-            paragraphs.append(text)
-
-    return "\n".join(paragraphs)
+    items = []
+    for group in payload.get("data", []):
+        items.extend(group.get("items", []))
+    return items
 
 
 def main() -> None:
+    days = int(sys.argv[1]) if len(sys.argv) > 1 else 7
+
+    print(f"抓取 AI News 最近 {days} 天的内容…")
+    items = fetch_news(days)
+    print(f"共获取到 {len(items)} 条新闻")
+
+    # 按分类（tag）分组，一个分类写一个文件——这样图谱入库阶段沿用"每个文件只取
+    # 前几行"的做法（见 04_graph/ingest.py 的 MAX_PARAGRAPHS_PER_FILE），控制模型
+    # 调用次数的效果依然成立，不会因为新闻条数多就爆炸式增长
+    by_tag: dict[str, list[dict]] = {}
+    for item in items:
+        by_tag.setdefault(item.get("tag", "其他"), []).append(item)
+
     OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
-    saved = 0
+    for tag, tag_items in by_tag.items():
+        tag_name = TAG_NAMES.get(tag, tag)
+        lines = []
+        for item in tag_items:
+            title = item.get("title", {}).get("zh", "").strip()
+            summary = item.get("summary", {}).get("zh", "").strip()
+            if not title and not summary:
+                continue
+            lines.append(f"{title}：{summary}")
 
-    for title in TARGET_TITLES:
-        print(f"抓取「{title}」…")
-        try:
-            text = fetch_article(title)
-        except requests.RequestException as err:
-            print(f"  失败：{err}")
-            continue
+        out_path = OUTPUT_DIR / f"{tag_name}.txt"
+        out_path.write_text("\n".join(lines), encoding="utf-8")
+        print(f"  {tag_name}：{len(lines)} 条 → {out_path.relative_to(OUTPUT_DIR.parents[1])}")
 
-        if not text:
-            continue
-
-        out_path = OUTPUT_DIR / f"{title}.txt"
-        out_path.write_text(text, encoding="utf-8")
-        print(f"  已保存 {len(text)} 字到 {out_path.relative_to(OUTPUT_DIR.parents[1])}")
-        saved += 1
-
-        time.sleep(1)  # 礼貌性限速，不给维基百科服务器添麻烦
-
-    print(f"\n完成，共抓取 {saved}/{len(TARGET_TITLES)} 个词条")
+    print(f"\n完成，共写入 {len(by_tag)} 个分类文件")
 
 
 if __name__ == "__main__":

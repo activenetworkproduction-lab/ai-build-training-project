@@ -1,7 +1,7 @@
 """图查询：从某个实体出发，找到与它相关的其它实体。
 
 用法：
-    python 04_graph/query_graph.py "RAG"
+    python 04_graph/query_graph.py "阿里巴巴"
 
 思路：
     用 Cypher 查询和给定实体有直接关系（1 跳）的所有节点。用 startNode(r)/
@@ -51,5 +51,5 @@ def query_graph(entity_name: str) -> None:
 
 
 if __name__ == "__main__":
-    name = sys.argv[1] if len(sys.argv) > 1 else "RAG"
+    name = sys.argv[1] if len(sys.argv) > 1 else "阿里巴巴"
     query_graph(name)

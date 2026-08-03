@@ -1,7 +1,7 @@
 """BM25 查询：基于关键词匹配和词频统计的经典检索算法，不需要模型。
 
 用法：
-    python 03_vector/query_bm25.py "PostgreSQL 扩展"
+    python 03_vector/query_bm25.py "阿里巴巴 Qwen"
 
 实现说明：
     中文没有空格分词，严谨的做法要用 jieba 这类分词库，但为了让教学重点留在
@@ -62,5 +62,5 @@ def query_bm25(question: str, top_k: int = 5) -> None:
 
 
 if __name__ == "__main__":
-    query = sys.argv[1] if len(sys.argv) > 1 else "PostgreSQL 扩展"
+    query = sys.argv[1] if len(sys.argv) > 1 else "阿里巴巴 Qwen"
     query_bm25(query)

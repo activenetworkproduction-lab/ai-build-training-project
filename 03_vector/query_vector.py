@@ -1,7 +1,7 @@
 """向量查询：找出和问题语义最相近的几条记录。
 
 用法：
-    python 03_vector/query_vector.py "什么是向量检索？"
+    python 03_vector/query_vector.py "有哪些关于AI安全和监管的新闻？"
 """
 
 import sys
@@ -45,5 +45,5 @@ def query_vector(question: str, top_k: int = 5) -> None:
 
 
 if __name__ == "__main__":
-    query = sys.argv[1] if len(sys.argv) > 1 else "什么是向量检索？"
+    query = sys.argv[1] if len(sys.argv) > 1 else "有哪些关于AI安全和监管的新闻？"
     query_vector(query)

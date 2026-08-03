@@ -2,6 +2,7 @@
 
 这个项目演示向量检索的完整闭环：**文本怎么被切块、embedding、存进 Postgres**，
 以及**两种不同原理的查询方式**（语义向量 vs 关键词 BM25）之间的效果差异。
+数据来源是 [00_crawler](../00_crawler) 抓的 [AI News](https://ai-news.tayoru-kun.com/) 新闻。
 
 ## 当前状态
 
@@ -10,43 +11,45 @@
 | `ingest.py` | ✅ 完整实现（依赖 `common/embedding.py`） |
 | `query_vector.py` | ✅ 完整实现并验证（pgvector 的 `<=>` 余弦距离排序） |
 | `query_bm25.py` | ✅ 完整实现并验证（`rank_bm25`，按字符切分中文） |
-| `common/embedding.py` | ⏳ 课堂留白：`embed_text()` 已验证跑通（71 条爬虫段落全部导入成功），核心代码注释在文件底部 |
+| `common/embedding.py` | ⏳ 课堂留白：`embed_text()` 已验证跑通（61 条新闻全部导入成功），核心代码注释在文件底部 |
 
 `embedding.py` 一旦被课堂现场实现，`ingest.py` 和 `query_vector.py` 不需要改任何代码
 就能直接跑通——它们已经按照"依赖 embed_text() 存在"的假设写完整了。
 
 ## 数据怎么"被清晰切块"的
 
-1. **切块（chunking）**：[00_crawler](../00_crawler) 爬下来的维基百科正文，本身已经
-   按自然段落换行分好了；`ingest.py` 直接按行切分——每段几十到几百字，长度适中，
-   不需要再做更复杂的滑动窗口/重叠切分
-2. **embedding**：每个切块调用 `common/embedding.py` 的 `embed_text()`，转成 768 维向量
-3. **存储**：连同来源文件名（`source`）一起存进 Postgres 的 `documents` 表
+1. **切块（chunking）**：[00_crawler](../00_crawler) 按分类（模型/工具/协议/平台/研究）
+   汇总出 5 个文件，每个文件一行一条新闻（标题+摘要）；`ingest.py` 直接按行切分——
+   每条新闻本身长度适中，不需要再做更复杂的滑动窗口/重叠切分
+2. **embedding**：每一行调用 `common/embedding.py` 的 `embed_text()`，转成 768 维向量
+3. **存储**：连同来源分类（`source`，比如"模型"）一起存进 Postgres 的 `documents` 表
    （`docker/postgres-init/01-init.sql` 里定义的 `VECTOR(768)` 列）
 
 ## 两种查询方式的实测效果对比
 
-同样搜"pgvector 扩展"/"什么是向量检索"，两种检索给出的排序完全不同：
+同样围绕"阿里巴巴 Qwen"这类问题，两种检索给出的排序完全不同：
 
-**BM25**（关键词命中越多分数越高）：
+**BM25**（关键词命中越多分数越高，问"阿里巴巴 Qwen"）：
 ```
-1. [得分 13.31] Postgres 是一个开源的关系型数据库，支持通过 pgvector 扩展存储向量并做相似度检索。
-2. [得分  3.15] Docker 可以把数据库、依赖环境打包成容器，本地一条命令就能启动，不用手动安装配置。
+1. [得分 32.29] 阿里巴巴Qwen3.8-Max全球发布，开放权重即将推出：...
+2. [得分 31.95] 阿里巴巴发布迄今为止最强大的AI模型Qwen3.8-Max：...
+3. [得分  5.96] Anthropic Claude AI 在后量子安全测试中取得突破：...
 ```
 
-**向量检索**（即使原文没有完全一样的措辞也能找到语义相关内容）：
+**向量检索**（问"有哪些关于AI安全和监管的新闻？"，原文没有一模一样的措辞也能找到）：
 ```
-1. [距离 0.1557] 向量检索的核心思路：把文本变成一串数字（embedding），语义相近的文本在向量空间里距离也相近。
-2. [距离 0.2238] 向量检索擅长找"意思相近"的内容，BM25 擅长找"关键词精确匹配"的内容，实际系统里常把两者结合使用。
+1. [距离 0.323] 特朗普政府接近敲定AI公司自愿监管框架：...
+2. [距离 0.324] 科技员工呼吁全球合作管理AI风险："Pacing the Frontier"倡议...
+3. [距离 0.334] 中国谴责美国AI制裁威胁为"AI霸权"，誓言反击：...
 ```
 
 ## 运行
 
 ```bash
-python 00_crawler/crawl.py       # 先爬数据（如果还没跑过）
-python 03_vector/ingest.py       # 需要先实现 common/embedding.py 的 embed_text
-python 03_vector/query_vector.py "什么是向量检索？"
-python 03_vector/query_bm25.py "pgvector 扩展"
+python 00_crawler/crawl.py              # 先爬数据（如果还没跑过）
+python 03_vector/ingest.py              # 需要先实现 common/embedding.py 的 embed_text
+python 03_vector/query_vector.py "有哪些关于AI安全和监管的新闻？"
+python 03_vector/query_bm25.py "阿里巴巴 Qwen"
 ```
 
 也可以用根目录 `scripts/start-vector-ingest.ps1` 和 `scripts/start-rag-query.ps1 -Mode bm25|vector`。

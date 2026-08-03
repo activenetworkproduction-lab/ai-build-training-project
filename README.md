@@ -9,7 +9,7 @@
 
 | # | 项目 | 位置 | 说明 |
 |---|---|---|---|
-| 00 | 爬虫 | `00_crawler/` | 共用的数据来源（不算在"7个项目"里），抓中文维基百科词条 |
+| 00 | 爬虫 | `00_crawler/` | 共用的数据来源（不算在"7个项目"里），抓 [AI News](https://ai-news.tayoru-kun.com/) 网站的新闻 |
 | 01 | AI OCR | `01_ai-ocr/` | 图片文字解析，NestJS + React，Gemini/Qwen-VL |
 | 02 | AI RAG | `02_ai-rag/` | Agentic 查询：模型自己决定调用 03/04 里的哪种查询方式 |
 | 03 | Vector | `03_vector/` | 数据怎么"切块"存向量 + 向量查询 + BM25 查询 |
@@ -90,7 +90,7 @@ powershell -File scripts/setup.ps1
 ### 第 2 步：跑 RAG 全流程（00 → 03/04 → 02）
 
 ```powershell
-powershell -File scripts/start-crawler.ps1         # 00：抓取维基百科词条到 data/raw/
+powershell -File scripts/start-crawler.ps1         # 00：抓取 AI News 新闻到 data/raw/
 powershell -File scripts/start-vector-ingest.ps1   # 03：分段 + embedding，写入 Postgres
 powershell -File scripts/start-graph-ingest.ps1    # 04：拆三元组，写入 Neo4j
 powershell -File scripts/start-rag-query.ps1       # 02/03/04：交互式选查询方式
