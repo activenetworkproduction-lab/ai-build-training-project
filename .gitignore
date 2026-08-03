@@ -1,0 +1,11 @@
+node_modules/
+dist/
+*.log
+.env
+.env.local
+.DS_Store
+
+# Python 项目
+.venv/
+__pycache__/
+*.pyc

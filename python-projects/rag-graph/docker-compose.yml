@@ -1,0 +1,17 @@
+services:
+  neo4j:
+    image: neo4j:5-community
+    container_name: rag-graph-neo4j
+    restart: unless-stopped
+    environment:
+      # 格式：用户名/密码，密码至少 8 位。首次启动生效，之后改密码要去 Neo4j Browser 里改
+      NEO4J_AUTH: neo4j/raggraph123
+    ports:
+      # 本机 7474/7687 已被占用，改用 7475/7688；Neo4j Browser 网页打开 http://localhost:7475
+      - '7475:7474' # HTTP：Neo4j Browser 可视化界面
+      - '7688:7687' # Bolt：Python driver 用这个端口连接
+    volumes:
+      - neo4j_data:/data
+
+volumes:
+  neo4j_data:

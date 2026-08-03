@@ -1,0 +1,13 @@
+# Database connection + pgvector Python support
+psycopg2-binary==2.9.10
+pgvector==0.3.6
+
+# Read .env config
+python-dotenv==1.0.1
+
+# Plain requests is enough for the hand-written embedding call demo (no heavy SDK),
+# so learners can see exactly what an embedding request/response looks like.
+requests==2.32.3
+
+# BM25 keyword search (pure Python implementation, easy to read the algorithm itself)
+rank-bm25==0.2.2
