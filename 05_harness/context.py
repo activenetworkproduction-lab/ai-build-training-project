@@ -5,6 +5,8 @@
 只保留 system prompt + 最近 N 条消息。
 """
 
+from common.trace import record
+
 
 class ConversationContext:
     def __init__(self, system_prompt: str, max_messages: int = 20):
@@ -20,4 +22,4 @@ class ConversationContext:
         if len(self.messages) > self.max_messages + 1:
             dropped = len(self.messages) - (self.max_messages + 1)
             self.messages = [self.messages[0]] + self.messages[-self.max_messages :]
-            print(f"  [Context] 历史过长，裁掉了最早的 {dropped} 条消息")
+            record("context", f"  [Context] 历史过长，裁掉了最早的 {dropped} 条消息")

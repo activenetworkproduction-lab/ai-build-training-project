@@ -39,8 +39,11 @@
 │   ├── start-graph-visualize.ps1     # 04 图谱可视化 demo
 │   ├── start-rag-query.ps1           # 02/03/04 查询（-Mode bm25|vector|graph|agentic）
 │   ├── start-harness.ps1             # 05
+│   ├── start-harness-edge-cases.ps1  # 05 边界情况演示（失败重试/评估打回/权限拒绝）
 │   ├── start-loop.ps1                # 06
-│   └── start-graph-engineering.ps1   # 07
+│   ├── start-loop-tool-error.ps1     # 06 边界情况演示（工具报错不崩溃）
+│   ├── start-graph-engineering.ps1              # 07
+│   └── start-graph-engineering-max-revisions.ps1 # 07 边界情况演示（MAX_REVISIONS 保护）
 ├── 00_crawler/                   # 爬虫
 ├── 01_ai-ocr/                     # OCR：server(NestJS) + web(React)
 ├── 02_ai-rag/                     # Agentic 查询
@@ -49,10 +52,11 @@
 ├── 05_harness/                    # Agent Harness 样例
 ├── 06_loop/                       # Agent Loop 样例
 ├── 07_graph-engineering/          # Agent 编排图样例
-├── common/                        # 02~04 共用的 Python 模块
-│   ├── db_postgres.py / db_neo4j.py   # 数据库连接（已完整实现）
-│   ├── embedding.py               # 【课堂留白】embedding 手写调用
-│   └── extraction.py              # 【课堂留白】实体关系拆分手写调用
+├── common/                        # 跨项目共用的 Python 模块
+│   ├── db_postgres.py / db_neo4j.py   # 02~04 用：数据库连接（已完整实现）
+│   ├── embedding.py               # 02~04 用：【课堂留白】embedding 手写调用
+│   ├── extraction.py              # 02~04 用：【课堂留白】实体关系拆分手写调用
+│   └── trace.py                   # 05~07 用：执行轨迹记录器 + 可视化时间线渲染（已完整实现）
 ├── data/raw/                      # 爬虫产出（不进版本库，随时可重新生成）
 ├── requirements.txt               # 所有 Python 组件共用一份依赖
 └── .env.example                   # 所有 Python 组件共用一份配置
@@ -124,6 +128,16 @@ pnpm dev:ocr:web      # 前端 http://localhost:5102
 powershell -File scripts/start-harness.ps1
 powershell -File scripts/start-loop.ps1
 powershell -File scripts/start-graph-engineering.ps1 "自定义主题"
+```
+
+每次运行结束都会自动生成并打开一个可视化的执行轨迹时间线（`<项目>/trace_visualization.html`）。
+三个项目还各自带一个**不需要 GEMINI_API_KEY**、用固定假函数确定性复现边界情况的演示脚本，
+方便随时跑、方便下断点单步调试：
+
+```powershell
+powershell -File scripts/start-harness-edge-cases.ps1              # 失败重试 / 评估打回重答 / 权限拒绝
+powershell -File scripts/start-loop-tool-error.ps1                  # 工具报错被送回模型，而不是让循环崩溃
+powershell -File scripts/start-graph-engineering-max-revisions.ps1  # 评论者永远不满意时，MAX_REVISIONS 保护生效
 ```
 
 ## 管理界面

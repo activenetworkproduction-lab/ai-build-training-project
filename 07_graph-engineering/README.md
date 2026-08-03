@@ -33,6 +33,7 @@
 
 ✅ 已用真实 Gemini 调用验证跑通（APPROVE 路径 + 真实触发的 REVISE 环路），
 ⏳ 核心的 `call_model()`（`nodes.py` 里，三个节点共用）课堂留白。
+`visualize_flow.py`/`demo_max_revisions.py` 是纯展示/演示脚本，不涉及调用模型，不是课堂留白点。
 
 ## 实测效果
 
@@ -51,7 +52,8 @@
 ```
 
 另外用一个模拟的"永远要求修改"评论者单独测试过 `MAX_REVISIONS` 保护，3 轮后正确停止，
-不会死循环。
+不会死循环——见下面的[边界情况演示](#边界情况演示max_revisions-保护)，现在是一个
+真正能跑起来复现的脚本，不再只是 README 里的一句描述。
 
 ## 运行
 
@@ -59,7 +61,35 @@
 python 07_graph-engineering/main.py "RAG（检索增强生成）"
 ```
 
-也可以用根目录 `scripts/start-graph-engineering.ps1`。
+也可以用根目录 `scripts/start-graph-engineering.ps1`。每次运行结束都会在
+`07_graph-engineering/trace_visualization.html` 生成这次真实过程的图结构 + 时间线（自动打开）。
+
+## 调试：在哪里能看到 Agent 的决策/执行过程
+
+| 步骤 | 位置 | 说明 |
+|---|---|---|
+| 模型决策的调用点 | [`nodes.py:20`](nodes.py#L20)（`call_model()`，课堂留白，当前是占位报错） | 参考实现在文件第 80~107 行的注释块里，三个节点共用 |
+| 三个节点各自的职责 | [`nodes.py:26`](nodes.py#L26) `research_node()` / [`nodes.py:33`](nodes.py#L33) `writer_node()` / [`nodes.py:50`](nodes.py#L50) `critic_node()` | 每个节点单独一个函数，prompt 互不干扰 |
+| 评论者输出的解析 | [`nodes.py:66`](nodes.py#L66)（`_parse_critic_response()`） | 把模型返回的"决定：.../反馈：..."文本拆成结构化的 `(decision, feedback)` |
+| 图的路由逻辑（条件边+环） | [`graph.py:30-46`](graph.py#L30-L46)（`run_graph()` 里的 `while True:` 循环） | APPROVE 就 `break`，REVISE 就 `state.revision_count += 1` 再继续，`MAX_REVISIONS` 保护也在这里 |
+
+## 可视化：图结构 + 这次运行实际走过的路径
+
+`visualize_flow.py` 把这次运行画成两部分：上半部分是研究员→写手→评论者的静态流程图，
+REVISE 环路上标出这次真实走了几次、结束边标出是 APPROVE 通过还是撞到 `MAX_REVISIONS`
+强制结束；下半部分是每个节点/边事件的时间线（复用 `common/trace.py`，和 05/06 一样的
+组件）。生成的 `trace_visualization.html` 是单文件，双击打开即可看。
+
+## 边界情况演示：MAX_REVISIONS 保护
+
+```bash
+python 07_graph-engineering/demo_max_revisions.py
+```
+
+用一个固定返回 REVISE 的假评论者（不需要 GEMINI_API_KEY，也不需要先实现课堂留白的
+`call_model()`），确定性地验证"评论者永远不满意时，环不会无限转下去"：脚本最后会
+断言 `revision_count == MAX_REVISIONS`，跑起来直接看到断言通过，而不是只在 README
+里读到这句描述。
 
 ## 课堂实操
 

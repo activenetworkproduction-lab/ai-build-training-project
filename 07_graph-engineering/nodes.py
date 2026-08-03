@@ -12,6 +12,8 @@ import os
 
 from state import GraphState
 
+from common.trace import record
+
 MODEL = "gemini-3.5-flash"
 
 
@@ -24,7 +26,7 @@ def call_model(prompt: str) -> str:
 def research_node(state: GraphState) -> GraphState:
     prompt = f"你是研究员。请针对主题「{state.topic}」，列出 3-5 条关键事实/要点，用简洁的列表形式。"
     state.research_notes = call_model(prompt)
-    print(f"[Node: 研究员] 产出要点：\n{state.research_notes}\n")
+    record("node_research", f"[Node: 研究员] 产出要点：\n{state.research_notes}\n")
     return state
 
 
@@ -41,7 +43,7 @@ def writer_node(state: GraphState) -> GraphState:
             "请基于这些要点写一段 100~150 字的短文介绍这个主题。"
         )
     state.draft = call_model(prompt)
-    print(f"[Node: 写手] 第 {state.revision_count + 1} 版草稿：\n{state.draft}\n")
+    record("node_writer", f"[Node: 写手] 第 {state.revision_count + 1} 版草稿：\n{state.draft}\n")
     return state
 
 
@@ -57,7 +59,7 @@ def critic_node(state: GraphState) -> tuple[GraphState, str]:
     response = call_model(prompt)
     decision, feedback = _parse_critic_response(response)
     state.feedback = feedback
-    print(f"[Node: 评论者] 决定：{decision}，反馈：{feedback}\n")
+    record("node_critic", f"[Node: 评论者] 决定：{decision}，反馈：{feedback}\n")
     return state, decision
 
 

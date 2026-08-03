@@ -22,3 +22,8 @@ if ($Topic) {
 } else {
     & $py (Join-Path $repoRoot '07_graph-engineering\main.py')
 }
+
+$html = Join-Path $repoRoot '07_graph-engineering\trace_visualization.html'
+if (Test-Path $html) {
+    Start-Process $html
+}

@@ -1,12 +1,8 @@
 ﻿<#
-一键运行通用 Agent Loop 样例：计算器 + 汇率转换，模型自己决定要串联几步。
-用法：powershell -File scripts/start-loop.ps1
-     powershell -File scripts/start-loop.ps1 -Question "自定义问题"
+一键运行 06_loop 的工具报错边界情况演示：模型先用了不支持的币种触发工具报错，
+再换成支持的币种重试。不需要 GEMINI_API_KEY，用固定的假函数确定性复现。
+用法：powershell -File scripts/start-loop-tool-error.ps1
 #>
-param(
-    [string]$Question
-)
-
 $repoRoot = Split-Path -Parent $PSScriptRoot
 $py = Join-Path $repoRoot '.venv\Scripts\python.exe'
 
@@ -16,11 +12,7 @@ if (-not (Test-Path $py)) {
 }
 
 $env:PYTHONUTF8 = '1'
-if ($Question) {
-    & $py (Join-Path $repoRoot '06_loop\main.py') $Question
-} else {
-    & $py (Join-Path $repoRoot '06_loop\main.py')
-}
+& $py (Join-Path $repoRoot '06_loop\demo_tool_error.py')
 
 $html = Join-Path $repoRoot '06_loop\trace_visualization.html'
 if (Test-Path $html) {

@@ -1,12 +1,8 @@
 ﻿<#
-一键运行 Agent Harness 样例：工具注册/上下文/权限/状态/恢复/评估六大组件演示。
-用法：powershell -File scripts/start-harness.ps1
-     powershell -File scripts/start-harness.ps1 -Question "自定义问题"
+一键运行 05_harness 的边界情况演示（失败重试/评估打回重答/权限拒绝）。
+不需要 GEMINI_API_KEY，用固定的假函数确定性复现，方便随时跑、方便下断点调试。
+用法：powershell -File scripts/start-harness-edge-cases.ps1
 #>
-param(
-    [string]$Question
-)
-
 $repoRoot = Split-Path -Parent $PSScriptRoot
 $py = Join-Path $repoRoot '.venv\Scripts\python.exe'
 
@@ -16,11 +12,7 @@ if (-not (Test-Path $py)) {
 }
 
 $env:PYTHONUTF8 = '1'
-if ($Question) {
-    & $py (Join-Path $repoRoot '05_harness\main.py') $Question
-} else {
-    & $py (Join-Path $repoRoot '05_harness\main.py')
-}
+& $py (Join-Path $repoRoot '05_harness\demo_edge_cases.py')
 
 $html = Join-Path $repoRoot '05_harness\trace_visualization.html'
 if (Test-Path $html) {

@@ -16,31 +16,33 @@ MAX_REVISIONS 是"失败隔离"的一种体现：环不能无限转下去，模�
 from nodes import critic_node, research_node, writer_node
 from state import GraphState
 
+from common.trace import record
+
 MAX_REVISIONS = 3
 
 
 def run_graph(topic: str) -> GraphState:
     state = GraphState(topic=topic)
 
-    print("[Edge] 开始 → 研究员节点")
+    record("edge", "[Edge] 开始 → 研究员节点")
     state = research_node(state)
 
     while True:
-        print("[Edge] 研究员/写手 → 写手节点")
+        record("edge", "[Edge] 研究员/写手 → 写手节点")
         state = writer_node(state)
 
-        print("[Edge] 写手 → 评论者节点")
+        record("edge", "[Edge] 写手 → 评论者节点")
         state, decision = critic_node(state)
 
         if decision == "APPROVE":
-            print("[Edge] 评论者：APPROVE → 结束")
+            record("edge", "[Edge] 评论者：APPROVE → 结束")
             break
 
         state.revision_count += 1
         if state.revision_count >= MAX_REVISIONS:
-            print(f"[Edge] 已达最大修改次数（{MAX_REVISIONS}），强制结束，避免无限循环")
+            record("edge", f"[Edge] 已达最大修改次数（{MAX_REVISIONS}），强制结束，避免无限循环")
             break
 
-        print(f"[Edge] 评论者：REVISE → 打回写手节点（第 {state.revision_count} 次修改）")
+        record("edge", f"[Edge] 评论者：REVISE → 打回写手节点（第 {state.revision_count} 次修改）")
 
     return state

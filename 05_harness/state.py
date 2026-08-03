@@ -5,6 +5,8 @@
 后续逻辑判断，不一定要塞回给模型。
 """
 
+from common.trace import record
+
 
 class SessionState:
     def __init__(self):
@@ -12,7 +14,7 @@ class SessionState:
 
     def set(self, key: str, value) -> None:
         self.data[key] = value
-        print(f"  [State] {key} = {value}")
+        record("state", f"  [State] {key} = {value}")
 
     def get(self, key: str, default=None):
         return self.data.get(key, default)

@@ -7,6 +7,8 @@
 import functools
 import time
 
+from common.trace import record
+
 
 def with_retry(max_attempts: int = 3, initial_backoff: float = 1.0):
     def decorator(fn):
@@ -25,7 +27,7 @@ def with_retry(max_attempts: int = 3, initial_backoff: float = 1.0):
                     last_err = err
                     if attempt == max_attempts:
                         break
-                    print(f"  [Recovery] 第 {attempt} 次调用失败（{err}），{backoff:.0f}s 后重试…")
+                    record("recovery", f"  [Recovery] 第 {attempt} 次调用失败（{err}），{backoff:.0f}s 后重试…")
                     time.sleep(backoff)
                     backoff *= 2
             raise last_err

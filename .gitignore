@@ -17,3 +17,8 @@ data/raw/
 # 可视化 demo 生成的 HTML（内嵌了当时爬到的真实新闻内容），跑一次对应脚本就能重新生成
 03_vector/embeddings_visualization.html
 04_graph/graph_visualization.html
+
+# 05/06/07 每次运行自动生成的执行轨迹可视化，跑一次对应脚本就能重新生成
+05_harness/trace_visualization.html
+06_loop/trace_visualization.html
+07_graph-engineering/trace_visualization.html

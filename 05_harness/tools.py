@@ -10,6 +10,8 @@
 import ast
 import operator
 
+from common.trace import record
+
 TOOL_REGISTRY: dict[str, dict] = {}
 
 
@@ -101,5 +103,5 @@ def get_weather(city: str) -> dict:
     },
 )
 def send_notification(message: str) -> str:
-    print(f"  [通知已发送]（模拟）：{message}")
+    record("harness", f"  [通知已发送]（模拟）：{message}")
     return f"已发送通知：{message}"

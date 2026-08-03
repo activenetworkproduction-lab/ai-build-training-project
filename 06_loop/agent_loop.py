@@ -15,6 +15,8 @@ import json
 
 from tools import TOOLS, dispatch
 
+from common.trace import record
+
 MAX_ROUNDS = 5
 MODEL = "gemini-3.5-flash"
 
@@ -43,14 +45,20 @@ def run_loop(question: str) -> str:
 
         tool_calls = message.get("tool_calls")
         if not tool_calls:
-            print(f"\n=== 第 {round_no} 轮：给出最终回答 ===")
+            record("loop", f"\n=== 第 {round_no} 轮：给出最终回答 ===")
             return message.get("content") or ""
 
         for call in tool_calls:
             name = call["function"]["name"]
             args = json.loads(call["function"]["arguments"])
-            result = dispatch(name, args)
-            print(f"第 {round_no} 轮：调用 {name}({args}) → {result}")
+            try:
+                result = dispatch(name, args)
+                record("loop", f"第 {round_no} 轮：调用 {name}({args}) → {result}")
+            except Exception as err:
+                # 工具报错不该让整个循环崩溃——把错误信息当成这次工具调用的"观察结果"
+                # 传回给模型，让它自己决定怎么应对（换个参数重试、换个工具、或者向用户说明失败原因）
+                result = f"工具调用失败：{err}"
+                record("loop", f"第 {round_no} 轮：调用 {name}({args}) 失败 → {err}")
             messages.append({"role": "tool", "tool_call_id": call["id"], "content": str(result)})
 
     return "（已达最大轮数，未能给出最终回答）"
