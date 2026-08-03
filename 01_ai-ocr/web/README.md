@@ -38,6 +38,27 @@ FileInterceptor('image')
 | ① 后端接收 | `01_ai-ocr/server/src/modules/ocr/ocr.controller.ts` |
 | ②③④ 调用模型 | `01_ai-ocr/server/src/modules/ocr/ocr.service.ts` 的 `parseImage()` |
 
+## 一.5、解析完还能继续追问
+
+页面上"解析结果"下面有一个"继续追问"区域，可以针对同一张图片接着问
+（比如"这张表格里的电话号码是多少"）。实现思路：
+
+- `parseImage()` 返回结果里带一个 `messages` 数组：第 0 条是"图片+初始指令"，
+  第 1 条是模型的识别结果——这就是这轮对话的完整历史。
+- 前端把 `messages` 存进 state，每次追问时把它 **原样** 传给
+  `POST /api/ocr/chat`，后端在后面追加新问题再发给模型。
+- 模型的对话接口本身是无状态的：每次调用都要带上完整历史，模型才"记得"
+  之前看过的图片、聊过的内容——这也是为什么 `messages` 数组必须原样传回，
+  不能只传"新增的这一句"。
+
+对应代码：`ocr.service.ts` 的 `chat()` 方法（和 `parseImage()` 共用同一个
+`callModel()` 私有方法，逻辑上就是"多传一轮历史"）；前端 `App.tsx` 的
+`handleAsk()`。
+
+> 因为历史里带着 base64 图片，每次追问的请求体可能有大几 MB，
+> `main.ts` 里把 Express 的 JSON body 限制从默认的 100kb 调大到了 15MB
+> （`app.use(json({ limit: '15mb' }))`），否则会报 413 Payload Too Large。
+
 ## 二、三个关键知识点
 
 ### 1. 文件上传为什么用 FormData（multipart/form-data）？

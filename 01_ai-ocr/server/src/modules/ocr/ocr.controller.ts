@@ -7,7 +7,7 @@ import {
   UseInterceptors,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
-import type { ApiResponse, OcrData, OcrProvider } from '../../types';
+import type { ApiResponse, ChatMessage, OcrChatData, OcrData, OcrProvider } from '../../types';
 import { OcrService } from './ocr.service';
 
 /**
@@ -20,6 +20,9 @@ import { OcrService } from './ocr.service';
  *   1. 解析 multipart 请求体；
  *   2. 把名为 "image" 的文件放进 @UploadedFile() 参数（file.buffer 就是图片的二进制内容）；
  *   3. 把其余文本字段放进 @Body() 参数。
+ *
+ * /chat 追问接口不需要传文件（图片已经在第一轮的 messages 里以 base64 的形式带过了），
+ * 所以走普通的 JSON body，不需要 multipart/FileInterceptor。
  */
 @Controller('ocr')
 export class OcrController {
@@ -50,10 +53,7 @@ export class OcrController {
     if (!file.mimetype.startsWith('image/')) {
       throw new BadRequestException(`只支持图片文件，收到的类型是 ${file.mimetype}`);
     }
-    const provider = (body.provider ?? 'gemini') as OcrProvider;
-    if (provider !== 'gemini' && provider !== 'qwen') {
-      throw new BadRequestException(`不支持的服务商 "${body.provider}"，可选值：gemini / qwen`);
-    }
+    const provider = this.parseProvider(body.provider);
 
     const data = await this.service.parseImage(file, {
       provider,
@@ -62,5 +62,43 @@ export class OcrController {
       prompt: body.prompt,
     });
     return { code: 0, message: 'ok', data };
+  }
+
+  // POST /api/ocr/chat —— 针对已经解析过的图片继续追问
+  @Post('chat')
+  async chat(
+    @Body()
+    body: {
+      provider?: string;
+      apiKey?: string;
+      model?: string;
+      messages?: ChatMessage[];
+      question?: string;
+    },
+  ): Promise<ApiResponse<OcrChatData>> {
+    if (!Array.isArray(body.messages) || body.messages.length === 0) {
+      throw new BadRequestException('缺少 messages（之前的对话历史），请先调用 /parse 完成一次解析');
+    }
+    if (!body.question?.trim()) {
+      throw new BadRequestException('缺少 question，请输入你想问的问题');
+    }
+    const provider = this.parseProvider(body.provider);
+
+    const data = await this.service.chat({
+      provider,
+      apiKey: body.apiKey,
+      model: body.model,
+      messages: body.messages,
+      question: body.question,
+    });
+    return { code: 0, message: 'ok', data };
+  }
+
+  private parseProvider(raw: string | undefined): OcrProvider {
+    const provider = (raw ?? 'gemini') as OcrProvider;
+    if (provider !== 'gemini' && provider !== 'qwen') {
+      throw new BadRequestException(`不支持的服务商 "${raw}"，可选值：gemini / qwen`);
+    }
+    return provider;
   }
 }

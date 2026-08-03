@@ -4,7 +4,7 @@ import {
   Injectable,
   Logger,
 } from '@nestjs/common';
-import type { OcrData, OcrProvider } from '../../types';
+import type { ChatMessage, OcrData, OcrProvider } from '../../types';
 
 /**
  * 【学习要点】视觉大模型是怎么"看图"的？
@@ -15,6 +15,14 @@ import type { OcrData, OcrProvider } from '../../types';
  * Gemini 和 Qwen（通义千问）都提供 "OpenAI 兼容" 的接口：请求格式和 OpenAI 的
  * /chat/completions 完全一样，只是 baseUrl、模型名、API Key 不同。
  * 所以换服务商 = 换三个配置项，代码逻辑完全不用改 —— 这也是本项目选这种写法的原因。
+ *
+ * 【学习要点】追问功能是怎么"记住"之前的对话的？
+ *
+ * 大模型的 API 本身是无状态的——每次调用都是独立的，服务器不会帮你记住上一轮聊了什么。
+ * 能"接着聊"全靠客户端每次把完整的历史消息数组（messages）一起发过去，模型看到的是
+ * "从头到尾的完整对话"，而不是"新增的这一句"。这也是为什么追问接口 chat() 需要
+ * 接收并原样传回 messages：图片只在第一轮出现一次，但只要它还在 messages 数组里，
+ * 后面每一轮模型都还能"看见"它。
  */
 
 /** 各服务商的接入配置：换模型/换服务商时改这里（或直接在前端界面填写） */
@@ -47,13 +55,69 @@ interface ParseOptions {
   prompt?: string;
 }
 
+interface ChatOptions {
+  provider: OcrProvider;
+  apiKey?: string;
+  model?: string;
+  messages: ChatMessage[];
+  question: string;
+}
+
 @Injectable()
 export class OcrService {
   private readonly logger = new Logger(OcrService.name);
 
   async parseImage(file: Express.Multer.File, options: ParseOptions): Promise<OcrData> {
-    const config = PROVIDER_CONFIG[options.provider];
+    const { apiKey, model, config } = this.resolveCredentials(options);
 
+    // ---- 第 1 步：二进制图片 → base64 data URL ----
+    const dataUrl = `data:${file.mimetype};base64,${file.buffer.toString('base64')}`;
+
+    // ---- 第 2 步：组装 OpenAI 兼容的多模态消息（第一轮，图片只在这里出现一次）----
+    // content 是一个数组：一段文字指令 + 一张图片，模型会把两者放在一起理解
+    const firstMessage: ChatMessage = {
+      role: 'user',
+      content: [
+        { type: 'text', text: options.prompt?.trim() || DEFAULT_PROMPT },
+        { type: 'image_url', image_url: { url: dataUrl } },
+      ],
+    };
+
+    // ---- 第 3 步：调用模型接口 ----
+    const startedAt = Date.now();
+    this.logger.log(`调用 ${options.provider}/${model} 解析图片（${file.size} 字节）`);
+    const text = await this.callModel(config, apiKey, model, [firstMessage]);
+
+    return {
+      text,
+      provider: options.provider,
+      model,
+      durationMs: Date.now() - startedAt,
+      // 保存下这轮对话，前端追问时会把它原样传回来，再往后追加新的问答
+      messages: [firstMessage, { role: 'assistant', content: text }],
+    };
+  }
+
+  /**
+   * 追问：把"到目前为止的完整对话历史 + 新问题"一起发给模型。
+   * 历史里的第一条消息带着图片，所以模型依然能回答"图片里那个电话号码是多少"这类问题。
+   */
+  async chat(options: ChatOptions): Promise<{ reply: string; messages: ChatMessage[] }> {
+    const { apiKey, model, config } = this.resolveCredentials(options);
+
+    const messages: ChatMessage[] = [
+      ...options.messages,
+      { role: 'user', content: options.question },
+    ];
+
+    this.logger.log(`调用 ${options.provider}/${model} 追问（第 ${messages.length} 条消息）`);
+    const reply = await this.callModel(config, apiKey, model, messages);
+
+    return { reply, messages: [...messages, { role: 'assistant', content: reply }] };
+  }
+
+  private resolveCredentials(options: { provider: OcrProvider; apiKey?: string; model?: string }) {
+    const config = PROVIDER_CONFIG[options.provider];
     // API Key 优先级：前端界面填写的 > 服务端环境变量（GEMINI_API_KEY / DASHSCOPE_API_KEY）
     const apiKey = options.apiKey?.trim() || process.env[config.envKey];
     if (!apiKey) {
@@ -62,31 +126,17 @@ export class OcrService {
           `获取地址：${config.consoleUrl}`,
       );
     }
-
     const model = options.model?.trim() || config.defaultModel;
+    return { apiKey, model, config };
+  }
 
-    // ---- 第 1 步：二进制图片 → base64 data URL ----
-    const dataUrl = `data:${file.mimetype};base64,${file.buffer.toString('base64')}`;
-
-    // ---- 第 2 步：组装 OpenAI 兼容的多模态消息 ----
-    // content 是一个数组：一段文字指令 + 一张图片，模型会把两者放在一起理解
-    const requestBody = {
-      model,
-      messages: [
-        {
-          role: 'user',
-          content: [
-            { type: 'text', text: options.prompt?.trim() || DEFAULT_PROMPT },
-            { type: 'image_url', image_url: { url: dataUrl } },
-          ],
-        },
-      ],
-    };
-
-    // ---- 第 3 步：调用模型接口 ----
-    const startedAt = Date.now();
-    this.logger.log(`调用 ${options.provider}/${model} 解析图片（${file.size} 字节）`);
-
+  /** 真正发请求给模型、取出文字回复——parseImage 和 chat 共用这一段逻辑。 */
+  private async callModel(
+    config: { baseUrl: string },
+    apiKey: string,
+    model: string,
+    messages: ChatMessage[],
+  ): Promise<string> {
     let response: Response;
     try {
       response = await fetch(`${config.baseUrl}/chat/completions`, {
@@ -95,39 +145,26 @@ export class OcrService {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${apiKey}`,
         },
-        body: JSON.stringify(requestBody),
+        body: JSON.stringify({ model, messages }),
       });
     } catch (err) {
-      throw new BadGatewayException(
-        `无法连接 ${options.provider} 服务（${config.baseUrl}），请检查网络：${String(err)}`,
-      );
+      throw new BadGatewayException(`无法连接模型服务（${config.baseUrl}），请检查网络：${String(err)}`);
     }
 
     if (!response.ok) {
       // 把服务商返回的原始错误透传给前端，方便学习者排查（Key 错误 / 模型名不存在 / 欠费等）
       const errorText = await response.text();
-      throw new BadGatewayException(
-        `${options.provider} 返回错误（HTTP ${response.status}）：${errorText.slice(0, 500)}`,
-      );
+      throw new BadGatewayException(`模型返回错误（HTTP ${response.status}）：${errorText.slice(0, 500)}`);
     }
 
-    // ---- 第 4 步：从返回结果中取出文字 ----
-    // OpenAI 兼容接口的返回结构：{ choices: [ { message: { content: "识别出的文字" } } ] }
+    // OpenAI 兼容接口的返回结构：{ choices: [ { message: { content: "回复内容" } } ] }
     const result = (await response.json()) as {
       choices?: { message?: { content?: string } }[];
     };
     const text = result.choices?.[0]?.message?.content;
     if (typeof text !== 'string') {
-      throw new BadGatewayException(
-        `${options.provider} 返回了意外的数据结构：${JSON.stringify(result).slice(0, 500)}`,
-      );
+      throw new BadGatewayException(`模型返回了意外的数据结构：${JSON.stringify(result).slice(0, 500)}`);
     }
-
-    return {
-      text,
-      provider: options.provider,
-      model,
-      durationMs: Date.now() - startedAt,
-    };
+    return text;
   }
 }
