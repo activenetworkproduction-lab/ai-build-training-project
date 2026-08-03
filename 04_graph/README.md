@@ -25,6 +25,18 @@
 
 `extraction.py` 一旦被课堂现场实现，`ingest.py` 不需要改任何代码就能直接跑通。
 
+## 调试：在哪里能看到数据被拆分/转换
+
+想在调试器里打断点、单步观察"一条新闻怎么变成几条三元组"，看这几个精确位置：
+
+| 步骤 | 位置 | 说明 |
+|---|---|---|
+| 取段落（chunking） | [`04_graph/ingest.py:36`](ingest.py#L36)（`load_paragraphs()` 里 `[line.strip() for line in file.read_text(...).splitlines() ...]`） | 按行拆出候选段落，这里能看到"一篇文章"变成"若干行文本"的原始输入 |
+| 只取前 N 段 | [`04_graph/ingest.py:37`](ingest.py#L37)（`paragraphs.extend(lines[:MAX_PARAGRAPHS_PER_FILE])`） | 为控制模型调用次数，每个分类文件只取前 `MAX_PARAGRAPHS_PER_FILE`（5）行——想改抽取范围就改这里 |
+| 转换成三元组 | [`04_graph/ingest.py:58`](ingest.py#L58)（`triples = extract_triples(text)`） | 调用点：一段文本在这一行变成若干条 `{subject, relation, object}` |
+| 三元组抽取的实际逻辑 | [`common/extraction.py:26`](../common/extraction.py#L26)（`extract_triples()`，课堂留白，当前是占位报错）；参考实现在文件第 32~68 行的注释块里 | 想看真实的"拼 prompt → 调用模型 → 解析 JSON"过程，去掉这行的占位报错、临时取消注释块即可跑通调试 |
+| 拆完之后长什么样 | [`04_graph/visualize_graph.py`](visualize_graph.py) 的 `build_graph()` 函数 | 所有三元组在这里被汇总成节点/边列表，配合[图谱可视化 demo](#图谱可视化-demo)直接肉眼看效果 |
+
 ## 实测效果
 
 用一条真实抓取的新闻测试拆分效果：

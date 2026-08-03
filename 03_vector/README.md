@@ -26,6 +26,17 @@
 3. **存储**：连同来源分类（`source`，比如"模型"）一起存进 Postgres 的 `documents` 表
    （`docker/postgres-init/01-init.sql` 里定义的 `VECTOR(768)` 列）
 
+## 调试：在哪里能看到数据被拆分/转换
+
+想在调试器里打断点、单步观察"一条新闻怎么变成一个向量"，看这几个精确位置：
+
+| 步骤 | 位置 | 说明 |
+|---|---|---|
+| 切块（chunking） | [`03_vector/ingest.py:31`](ingest.py#L31)（`load_chunks()` 里 `for line in file.read_text(...).splitlines()`） | 按行拆分原始文本，这里能看到"一篇文章"变成"一行一条新闻"的原始输入 |
+| 转换成向量 | [`03_vector/ingest.py:50`](ingest.py#L50)（`vector = embed_text(content)`） | 调用点：`content`（切块后的文本）在这一行变成 768 维 `vector` |
+| 向量生成的实际逻辑 | [`common/embedding.py:24`](../common/embedding.py#L24)（`embed_text()`，课堂留白，当前是占位报错）；参考实现在文件第 30~56 行的注释块里 | 想看真实的"拼 HTTP 请求 → 调 Gemini embedding 接口 → 取出向量"过程，去掉这行的占位报错、临时取消注释块即可跑通调试 |
+| 降维后长什么样 | [`03_vector/visualize_embeddings.py`](visualize_embeddings.py) 的 `pca_2d()` 函数 | 768 维向量在这里被投影到 2 维，配合 [embedding 可视化 demo](#embedding-可视化-demo) 直接肉眼看效果 |
+
 ## 两种查询方式的实测效果对比
 
 同样围绕"阿里巴巴 Qwen"这类问题，两种检索给出的排序完全不同：

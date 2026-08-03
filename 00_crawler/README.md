@@ -72,6 +72,15 @@ https://daily-ai-news-collector-ipzxnrn3rq-an.a.run.app?days=7
 教学对象的原因之一：能直观对比"爬有 API 的站"和"爬纯 HTML 站"（比如上一版
 用的维基百科）的差异。
 
+## 调试：在哪里能看到数据被拆分
+
+想在调试器里打断点、单步观察"一批新闻怎么被分类汇总"，看这两个精确位置：
+
+| 步骤 | 位置 | 说明 |
+|---|---|---|
+| 按分类分组 | [`00_crawler/crawl.py:67-68`](crawl.py#L67-L68)（`by_tag.setdefault(item.get("tag", "其他"), []).append(item)`） | 原始新闻列表在这里按 `tag` 字段拆成 5 组 |
+| 格式化成一行 | [`00_crawler/crawl.py:79`](crawl.py#L79)（`lines.append(f"{title}：{summary}")`） | 每条新闻的结构化字段（title/summary）在这里被拍平成 03_vector/04_graph 都能直接按行读取的纯文本格式 |
+
 ## 为什么按分类汇总成 5 个文件，而不是一条新闻一个文件
 
 `days=7` 大概能抓到 60 条新闻，如果每条新闻单独存一个文件，04_graph 那边
