@@ -3,7 +3,7 @@
 本机（`anc-tarounoMini.anc.lan`）同时接入了两个网络，两套 Docker 数据库基础设施在这两个网络上都已开放访问：
 
 - 有线网络（`en0`）：`192.168.20.174`
-- Wi-Fi 网络（`en1`）：`192.168.68.69`
+- Wi-Fi 网络（`en1`）：`192.168.68.52`
 
 **请根据你自己电脑连接的是哪个网络，选择对应的 IP**（用 `ipconfig`/`ifconfig` 看一下自己的网段，跟哪个前缀一致就用哪个 IP；两个网络互不相通，用错网段会连不上）。
 
@@ -11,22 +11,22 @@
 
 ## 通用套件（独立于本项目）
 
-| 服务 | 有线网络 (`192.168.20.174`) | Wi-Fi 网络 (`192.168.68.69`) |
+| 服务 | 有线网络 (`192.168.20.174`) | Wi-Fi 网络 (`192.168.68.52`) |
 |---|---|---|
-| Postgres | `postgresql://shareduser:5RhM7sS17QOGcfTdEw1ffmn@192.168.20.174:5432/shareddb` | `postgresql://shareduser:5RhM7sS17QOGcfTdEw1ffmn@192.168.68.69:5432/shareddb` |
-| Neo4j Browser | http://192.168.20.174:7474 | http://192.168.68.69:7474 |
-| Neo4j Bolt | `bolt://192.168.20.174:7687` | `bolt://192.168.68.69:7687` |
+| Postgres | `postgresql://shareduser:5RhM7sS17QOGcfTdEw1ffmn@192.168.20.174:5432/shareddb` | `postgresql://shareduser:5RhM7sS17QOGcfTdEw1ffmn@192.168.68.52:5432/shareddb` |
+| Neo4j Browser | http://192.168.20.174:7474 | http://192.168.68.52:7474 |
+| Neo4j Bolt | `bolt://192.168.20.174:7687` | `bolt://192.168.68.52:7687` |
 | Neo4j 账号 | `neo4j` / `OnogdO9Cnn0iKcbLlz1QPgo` | 同左 |
 
 ## 训练项目套件（本仓库 `docker/docker-compose.yml`）
 
-| 服务 | 有线网络 (`192.168.20.174`) | Wi-Fi 网络 (`192.168.68.69`) |
+| 服务 | 有线网络 (`192.168.20.174`) | Wi-Fi 网络 (`192.168.68.52`) |
 |---|---|---|
-| Postgres (pgvector) | `postgresql://rag:rag_password@192.168.20.174:5532/ragdb` | `postgresql://rag:rag_password@192.168.68.69:5532/ragdb` |
-| Neo4j Browser | http://192.168.20.174:7475 | http://192.168.68.69:7475 |
-| Neo4j Bolt | `bolt://192.168.20.174:7688` | `bolt://192.168.68.69:7688` |
+| Postgres (pgvector) | `postgresql://rag:rag_password@192.168.20.174:5532/ragdb` | `postgresql://rag:rag_password@192.168.68.52:5532/ragdb` |
+| Neo4j Browser | http://192.168.20.174:7475 | http://192.168.68.52:7475 |
+| Neo4j Bolt | `bolt://192.168.20.174:7688` | `bolt://192.168.68.52:7688` |
 | Neo4j 账号 | `neo4j` / `raggraph123` | 同左 |
-| pgAdmin | http://192.168.20.174:5050，账号 `admin@training-project.com` / `admin123` | http://192.168.68.69:5050，账号同左 |
+| pgAdmin | http://192.168.20.174:5050，账号 `admin@training-project.com` / `admin123` | http://192.168.68.52:5050，账号同左 |
 
 ### 注意事项
 
