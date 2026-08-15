@@ -1,4 +1,5 @@
 AQ.Ab8RN6IeOlxFSgO5o746lmdM4-XANrddXubrT7VK_5BjI42gHzA
+OnogdO9Cnn0iKcbLlz1QPgo
 # project040 — AI 应用教学项目集
 
 8 个教学项目（编号 00-07），共用一套 Docker 基础设施（Postgres+pgvector / Neo4j / pgAdmin）。
