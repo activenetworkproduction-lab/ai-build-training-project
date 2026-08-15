@@ -1,5 +1,7 @@
 AQ.Ab8RN6IeOlxFSgO5o746lmdM4-XANrddXubrT7VK_5BjI42gHzA
 
+https://nove-personal-1059875322195.asia-northeast1.run.app/
+
 #    OnogdO9Cnn0iKcbLlz1QPgo
 # project040 — AI 应用教学项目集
 
